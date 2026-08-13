@@ -10,7 +10,7 @@ import {
   submitReviewRequest,
   subscribeRailpoolEvents,
 } from './api.js'
-import { LoadingPanel, RailBottomNav, RailHeader } from './components.jsx'
+import { LoadingPanel, PrimaryButton, RailBottomNav, RailHeader, SecondaryButton } from './components.jsx'
 import { ComparisonScreen } from './screens/ComparisonScreen.jsx'
 import { DashboardScreen } from './screens/DashboardScreen.jsx'
 import { DisruptionScreen } from './screens/DisruptionScreen.jsx'
@@ -56,11 +56,14 @@ export function RailLogisticsApp({ onExit, onNotify }) {
   const [error, setError] = useState('')
   const [recording, setRecording] = useState(false)
   const [quickVoiceText, setQuickVoiceText] = useState('')
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const bodyRef = useRef(null)
   const activePoolRef = useRef('')
   const refreshTimerRef = useRef(null)
   const quickRecognitionRef = useRef(null)
   const quickConfirmedTextRef = useRef('')
+  const cancelDialogRef = useRef(null)
+  const cancelTriggerRef = useRef(null)
 
   const navigate = (nextView) => {
     const normalized = nextView === 'notifications' ? 'disruption' : nextView
@@ -157,6 +160,15 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     bodyRef.current?.scrollTo({ top: 0, behavior: 'auto' })
     bodyRef.current?.focus({ preventScroll: true })
   }, [view])
+
+  useEffect(() => {
+    if (!cancelDialogOpen) return undefined
+    const frame = window.requestAnimationFrame(() => cancelDialogRef.current?.querySelector('button')?.focus())
+    return () => {
+      window.cancelAnimationFrame(frame)
+      cancelTriggerRef.current?.focus()
+    }
+  }, [cancelDialogOpen])
 
   const header = TITLES[view] ?? TITLES.dashboard
   const activeTab = useMemo(() => view === 'request' ? 'request' : view === 'disruption' ? 'notifications' : 'dashboard', [view])
@@ -262,7 +274,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
   }
 
   const cancelPlan = async () => {
-    if (!window.confirm('함께 보내기 참여를 취소할까요? 출발 전에는 비용 없이 취소할 수 있습니다.')) return
+    setCancelDialogOpen(false)
     setBusy(true)
     try {
       await saveProposalDecision(requestId, selectedProposal.id, 'cancelled', '사용자 취소')
@@ -276,6 +288,30 @@ export function RailLogisticsApp({ onExit, onNotify }) {
       setError(cancelError.message)
     } finally {
       setBusy(false)
+    }
+  }
+
+  const openCancelDialog = (event) => {
+    cancelTriggerRef.current = event?.currentTarget ?? document.activeElement
+    setCancelDialogOpen(true)
+  }
+
+  const handleCancelDialogKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      setCancelDialogOpen(false)
+      return
+    }
+    if (event.key !== 'Tab') return
+    const buttons = [...(cancelDialogRef.current?.querySelectorAll('button:not([disabled])') ?? [])]
+    const first = buttons[0]
+    const last = buttons.at(-1)
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault()
+      last?.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first?.focus()
     }
   }
 
@@ -352,15 +388,30 @@ export function RailLogisticsApp({ onExit, onNotify }) {
       <main ref={bodyRef} className={`rp-screen-body rp-screen-body--${view}`} tabIndex="-1" aria-label={`${header[0]} 화면`} aria-busy={busy}>
         {error && <div className="rp-connection-error" role="status">{error}</div>}
         {busy && view === 'request' && <div className="rp-loading-layer"><LoadingPanel /></div>}
-        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} recording={recording} onToggleRecording={recording ? stopQuickVoiceRequest : startQuickVoiceRequest} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
+        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} recording={recording} quickVoiceText={quickVoiceText} onToggleRecording={recording ? stopQuickVoiceRequest : startQuickVoiceRequest} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
         {view === 'request' && <RequestScreen onAnalyze={analyze} onExtract={extract} busy={busy} initialVoiceText={quickVoiceText} onInitialVoiceTextConsumed={() => setQuickVoiceText('')} />}
         {view === 'proposals' && baseline && proposals.length > 0 && <ProposalsScreen baseline={baseline} proposals={proposals} onProceed={proceed} onCompare={(proposal) => { setSelectedProposal(proposal); navigate('compare') }} onReject={reject} onModify={() => navigate('request')} />}
         {view === 'compare' && baseline && selectedProposal && <ComparisonScreen baseline={baseline} proposals={proposals} initialProposal={selectedProposal} onBack={() => navigate('proposals')} onProceed={proceed} />}
-        {view === 'pool' && selectedProposal && poolState && <PoolScreen proposal={selectedProposal} pool={poolState} network={network} onReview={() => navigate('review')} onModify={() => navigate('request')} onDisruption={() => navigate('disruption')} onCancel={cancelPlan} busy={busy} />}
+        {view === 'pool' && selectedProposal && poolState && <PoolScreen proposal={selectedProposal} pool={poolState} network={network} onReview={() => navigate('review')} onModify={() => navigate('request')} onDisruption={() => navigate('disruption')} onCancel={openCancelDialog} busy={busy} />}
         {view === 'disruption' && <DisruptionScreen network={network} pool={poolState} onOpenPool={openPoolFromAlert} onLeave={() => navigate('dashboard')} />}
         {view === 'review' && selectedProposal && <ReviewScreen requestId={requestId} requestInput={requestInput} pool={poolState} proposal={selectedProposal} onSubmit={submitReview} onDone={() => navigate('dashboard')} busy={busy} />}
       </main>
       <RailBottomNav active={activeTab} unread={network.recentEvents?.some((event) => event.type === 'pool_left') ? 1 : 0} onNavigate={handleBottomNavigation} />
+      {cancelDialogOpen && (
+        <div className="rp-modal-layer" role="presentation" onMouseDown={() => setCancelDialogOpen(false)}>
+          <section ref={cancelDialogRef} className="rp-modal rp-cancel-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-plan-title" aria-describedby="cancel-plan-description" onKeyDown={handleCancelDialogKeyDown} onMouseDown={(event) => event.stopPropagation()}>
+            <i className="rp-sheet-handle" />
+            <button type="button" className="rp-modal-close" aria-label="취소 확인 닫기" onClick={() => setCancelDialogOpen(false)}>×</button>
+            <span className="rp-modal__step">함께 보내기 참여 취소</span>
+            <h2 id="cancel-plan-title">이 계획을 취소할까요?</h2>
+            <p id="cancel-plan-description">출발 전에는 비용 없이 취소할 수 있습니다. 취소하면 현재 함께 보내기 참여가 종료됩니다.</p>
+            <div className="rp-cancel-modal__actions">
+              <SecondaryButton onClick={() => setCancelDialogOpen(false)}>계속 참여하기</SecondaryButton>
+              <PrimaryButton onClick={cancelPlan} disabled={busy}>계획 취소하기</PrimaryButton>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }
