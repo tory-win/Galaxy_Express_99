@@ -31,12 +31,8 @@ export function ReviewScreen({ requestId, requestInput, pool, proposal, onSubmit
         <h1>검토 요청이 전달되었습니다</h1>
         <p>이 요청은 예약이나 계약이 아닙니다.<br />영업일 기준 1~2일 내 담당자가 연락드립니다.</p>
         <div className="rp-review-number"><span>검토 요청 번호</span><strong>{reviewId}</strong><small>문의하실 때 이 번호를 알려주세요.</small></div>
-        <section className="rp-alimtalk-preview" aria-label="가상 코레일톡 알림톡">
-          <div className="rp-alimtalk-preview__head"><span>K</span><div><strong>코레일톡 알림톡</strong><small>시연용 · 실제 발송되지 않음</small></div><StatusPill tone="green">접수 완료</StatusPill></div>
-          <p><strong>[레일물류] 검토 요청이 접수되었습니다.</strong><br />요청 번호 {reviewId}<br />진행 상황이 변경되거나 운송 조건이 확정되면 같은 채널로 알려드립니다.</p>
-        </section>
         <section className="rp-next-steps"><strong>다음 절차</strong><ol><li><i>1</i><span>코레일 담당자가 운임·적재 가능 여부를 확인합니다.</span></li><li><i>2</i><span>담당자가 등록된 연락처로 조건을 회신합니다.</span></li><li><i>3</i><span>회신 후 별도 운송 계약을 검토합니다.</span></li></ol></section>
-        <section className="rp-review-notice"><strong>진행 상황도 코레일톡 알림톡으로 알려드려요</strong><p>담당자 배정, 추가 정보 요청, 운임·적재 확인 완료와 최종 확정을 단계별로 알립니다. 현재는 해커톤 시연용이며 실제 카카오톡 메시지는 발송하지 않습니다.</p></section>
+        <section className="rp-review-notice"><strong>확인 결과도 푸시로 알려드려요</strong><p>담당자 배정, 추가 정보 요청, 운임·적재 확인 완료를 단계별로 알립니다.</p></section>
         <PrimaryButton onClick={onDone}>내 운송 목록으로</PrimaryButton>
       </div>
     )

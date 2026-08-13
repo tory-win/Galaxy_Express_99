@@ -216,7 +216,7 @@ export function RequestScreen({ onAnalyze, onExtract, busy, initialVoiceText = '
         <>
           <SectionHeading eyebrow="STEP 1" title="보내실 화물을 알려주세요" />
           <div className="rp-segmented" aria-label="운송 조건 입력 방법">
-            <button type="button" aria-label="음성으로 입력" title="음성으로 입력" aria-pressed={mode === 'voice'} className={`rp-voice-mode ${mode === 'voice' ? 'is-active' : ''}`} onClick={() => setMode('voice')}><Icon name="mic" size={21} /></button>
+            <button type="button" aria-pressed={mode === 'voice'} className={mode === 'voice' ? 'is-active' : ''} onClick={() => setMode('voice')}>전화·음성</button>
             <button type="button" aria-pressed={mode === 'direct'} className={mode === 'direct' ? 'is-active' : ''} onClick={() => setMode('direct')}>조건 선택</button>
             <button type="button" aria-pressed={mode === 'email'} className={mode === 'email' ? 'is-active' : ''} onClick={() => setMode('email')}>이메일·문서</button>
           </div>
@@ -227,8 +227,8 @@ export function RequestScreen({ onAnalyze, onExtract, busy, initialVoiceText = '
               {mode === 'voice' && (
                 <>
                   <div className="rp-voice-controls">
-                    <button type="button" className={listening ? 'is-listening' : ''} onClick={listening ? stopVoiceInput : startVoiceInput} aria-label={listening ? '음성 인식 중지' : '음성 인식 시작'} title={listening ? '음성 인식 중지' : '음성 인식 시작'} aria-pressed={listening} disabled={!speechSupported}>
-                      <Icon name="mic" size={22} />
+                    <button type="button" className={listening ? 'is-listening' : ''} onClick={listening ? stopVoiceInput : startVoiceInput} aria-pressed={listening} disabled={!speechSupported}>
+                      <Icon name={listening ? 'stop' : 'mic'} size={18} /> {listening ? '음성 입력 종료' : '음성 입력 시작'}
                     </button>
                     <small>{speechSupported ? (listening ? '말씀하신 내용이 아래에 실시간으로 표시됩니다.' : '마이크 사용 권한이 필요합니다.') : '이 브라우저에서는 직접 텍스트를 입력해 주세요.'}</small>
                   </div>
