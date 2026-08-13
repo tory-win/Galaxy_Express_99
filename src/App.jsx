@@ -19,12 +19,20 @@ function PhoneCanvas({ children }) {
 
   useLayoutEffect(() => {
     const updateScale = () => {
-      const heightScale = window.innerWidth <= 430 ? window.innerHeight / BASE_HEIGHT : Number.POSITIVE_INFINITY
-      setScale(Math.min(window.innerWidth / BASE_WIDTH, heightScale, MAX_WIDTH / BASE_WIDTH))
+      const viewport = window.visualViewport
+      const viewportWidth = viewport?.width ?? window.innerWidth
+      const viewportHeight = viewport?.height ?? window.innerHeight
+      const desktopGutter = viewportWidth > 430 ? 48 : 0
+      const availableHeight = Math.max(1, viewportHeight - desktopGutter)
+      setScale(Math.min(viewportWidth / BASE_WIDTH, availableHeight / BASE_HEIGHT, MAX_WIDTH / BASE_WIDTH))
     }
     updateScale()
     window.addEventListener('resize', updateScale)
-    return () => window.removeEventListener('resize', updateScale)
+    window.visualViewport?.addEventListener('resize', updateScale)
+    return () => {
+      window.removeEventListener('resize', updateScale)
+      window.visualViewport?.removeEventListener('resize', updateScale)
+    }
   }, [])
 
   return (

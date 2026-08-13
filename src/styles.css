@@ -6,6 +6,7 @@ html,
 body,
 #root {
   height: 100%;
+  height: 100dvh;
   margin: 0;
   overflow: hidden;
 }
@@ -16,12 +17,17 @@ body {
   color: var(--kr-color-ink);
   font-family: var(--kr-font-family);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 button,
 input {
   color: inherit;
   font: inherit;
+  line-height: inherit;
 }
 
 button {
@@ -185,6 +191,7 @@ img {
   display: flex;
   min-width: 0;
   flex-direction: column;
+  line-height: 1.2;
 }
 
 .kr-app-header__titles > span {
@@ -220,7 +227,12 @@ img {
 }
 
 .kr-app-header.is-centered .kr-app-header__titles h1 {
+  max-width: 100%;
+  overflow: hidden;
   font-size: var(--kr-font-16);
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kr-app-header.is-centered .kr-app-header__actions {
@@ -301,9 +313,9 @@ img {
   justify-content: space-between;
 }
 
-.kr-section-heading > div { display: flex; flex-direction: column; }
+.kr-section-heading > div { display: flex; min-width: 0; flex-direction: column; }
 .kr-section-heading span { margin-bottom: var(--kr-space-1); color: var(--kr-color-brand); font-size: var(--kr-font-10); font-weight: var(--kr-weight-bold); }
-.kr-section-heading h2 { margin: 0; font-size: var(--kr-font-18); font-weight: var(--kr-weight-bold); letter-spacing: -0.5px; }
+.kr-section-heading h2 { margin: 0; font-size: var(--kr-font-18); font-weight: var(--kr-weight-bold); line-height: 1.35; letter-spacing: -0.5px; word-break: keep-all; }
 
 .kr-sub-bottom-nav {
   position: absolute;
@@ -332,7 +344,7 @@ img {
 
 .kr-sub-bottom-nav button > span { position: relative; display: grid; place-items: center; }
 .kr-sub-bottom-nav button > span > i { top: -8px; right: -10px; }
-.kr-sub-bottom-nav button > b { font-size: var(--kr-font-10); font-weight: var(--kr-weight-semibold); }
+.kr-sub-bottom-nav button > b { font-size: var(--kr-font-10); font-weight: var(--kr-weight-semibold); line-height: 1.25; text-align: center; word-break: keep-all; }
 .kr-sub-bottom-nav button.is-active { color: var(--kr-color-brand); }
 
 .kr-app-header h1 {

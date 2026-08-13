@@ -17,7 +17,7 @@
 .rp-app button,
 .rp-app input,
 .rp-app select,
-.rp-app textarea { font: inherit; }
+.rp-app textarea { font: inherit; line-height: inherit; }
 .rp-app button,
 .rp-app label,
 .rp-app li,
@@ -27,6 +27,10 @@
 .rp-app strong,
 .rp-app td,
 .rp-app th { min-width: 0; }
+.rp-app h1,
+.rp-app h2,
+.rp-app h3,
+.rp-app p { text-wrap: pretty; }
 .rp-app button:focus-visible,
 .rp-app input:focus-visible,
 .rp-app select:focus-visible,
@@ -771,3 +775,49 @@
 .rp-station-options,
 .rp-modal,
 .rp-complete-mark { box-shadow: none; }
+
+/* Keep long Korean labels readable on the minimum supported phone width. */
+@media (max-width: 340px) {
+  .rp-dashboard,
+  .rp-request-screen,
+  .rp-proposals-screen,
+  .rp-comparison-screen,
+  .rp-pool-screen,
+  .rp-disruption-screen,
+  .rp-review-screen { padding-right: var(--kr-space-4); padding-left: var(--kr-space-4); }
+
+  .rp-hero-card,
+  .rp-network-card,
+  .rp-eco-points,
+  .rp-request-card,
+  .rp-paste-card,
+  .rp-extracted-summary,
+  .rp-optional-fields,
+  .rp-axis-card,
+  .rp-confirm-card,
+  .rp-open-axes,
+  .rp-proposal-card,
+  .rp-pool-progress,
+  .rp-pool-economics,
+  .rp-participant-section,
+  .rp-plan-summary,
+  .rp-live-summary,
+  .rp-event-feed,
+  .rp-review-section,
+  .rp-review-contact,
+  .rp-next-steps { padding: var(--kr-space-4); }
+
+  .rp-field-row { grid-template-columns: minmax(0, 1fr); }
+  .rp-eco-points { align-items: flex-start; flex-wrap: wrap; }
+  .rp-eco-points p { width: 100%; padding-top: var(--kr-space-2); border-top: 1px solid var(--kr-color-line); text-align: left; }
+  .rp-proposal-actions,
+  .rp-pool-actions,
+  .rp-review-actions,
+  .rp-recovery-actions,
+  .rp-sticky-actions { grid-template-columns: minmax(0, 1fr); }
+  .rp-proposal-actions > *,
+  .rp-pool-actions > *,
+  .rp-review-actions > *,
+  .rp-recovery-actions > *,
+  .rp-sticky-actions > * { grid-column: 1; }
+}
