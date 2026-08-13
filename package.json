@@ -1,0 +1,24 @@
+{
+  "name": "galaxy-express-99",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/product-web",
+    "services/product-api"
+  ],
+  "scripts": {
+    "dev": "docker compose up -d --build",
+    "dev:logs": "docker compose logs -f product-web product-api",
+    "down": "docker compose down",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}
