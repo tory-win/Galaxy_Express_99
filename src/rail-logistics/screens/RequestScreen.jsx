@@ -209,19 +209,19 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
         <>
           <SectionHeading eyebrow="STEP 1" title="보내실 화물을 알려주세요" />
           <div className="rp-segmented" aria-label="운송 조건 입력 방법">
-            <button type="button" aria-pressed={mode === 'voice'} className={mode === 'voice' ? 'is-active' : ''} onClick={() => setMode('voice')}>전화·음성</button>
+            <button type="button" aria-label="음성으로 입력" title="음성으로 입력" aria-pressed={mode === 'voice'} className={`rp-voice-mode ${mode === 'voice' ? 'is-active' : ''}`} onClick={() => setMode('voice')}><Icon name="mic" size={21} /></button>
             <button type="button" aria-pressed={mode === 'direct'} className={mode === 'direct' ? 'is-active' : ''} onClick={() => setMode('direct')}>조건 선택</button>
             <button type="button" aria-pressed={mode === 'email'} className={mode === 'email' ? 'is-active' : ''} onClick={() => setMode('email')}>이메일·문서</button>
           </div>
 
           {(mode === 'email' || mode === 'voice') && (
             <section className="rp-paste-card">
-              <div className="rp-paste-card__heading"><span><Icon name={mode === 'voice' ? 'phone' : 'mail'} size={17} /></span><div><strong>{mode === 'voice' ? '전화 문의를 들으며 받아쓰세요' : '사내 메일을 그대로 붙여넣으세요'}</strong><small>{mode === 'voice' ? '말씀하신 내용을 텍스트로 옮겨 운송 조건을 정리합니다.' : '원문에 없는 값은 만들지 않고 확인 필요로 남깁니다.'}</small></div></div>
+              <div className="rp-paste-card__heading"><span><Icon name={mode === 'voice' ? 'mic' : 'mail'} size={17} /></span><div><strong>{mode === 'voice' ? '음성으로 운송 조건 입력' : '사내 메일을 그대로 붙여넣으세요'}</strong><small>{mode === 'voice' ? '마이크 버튼을 누르면 인식한 조건이 바로 표시됩니다.' : '원문에 없는 값은 만들지 않고 확인 필요로 남깁니다.'}</small></div></div>
               {mode === 'voice' && (
                 <>
                   <div className="rp-voice-controls">
-                    <button type="button" className={listening ? 'is-listening' : ''} onClick={listening ? stopVoiceInput : startVoiceInput} aria-pressed={listening} disabled={!speechSupported}>
-                      <span aria-hidden="true">{listening ? '■' : '●'}</span>{listening ? '받아쓰기 중지' : '받아쓰기 시작'}
+                    <button type="button" className={listening ? 'is-listening' : ''} onClick={listening ? stopVoiceInput : startVoiceInput} aria-label={listening ? '음성 인식 중지' : '음성 인식 시작'} title={listening ? '음성 인식 중지' : '음성 인식 시작'} aria-pressed={listening} disabled={!speechSupported}>
+                      <Icon name="mic" size={22} />
                     </button>
                     <small>{speechSupported ? (listening ? '말씀하신 내용이 아래에 실시간으로 표시됩니다.' : '마이크 사용 권한이 필요합니다.') : '이 브라우저에서는 직접 텍스트를 입력해 주세요.'}</small>
                   </div>
