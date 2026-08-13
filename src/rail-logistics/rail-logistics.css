@@ -707,7 +707,8 @@
   font-size: var(--kr-font-10);
   font-weight: var(--kr-weight-semibold);
 }
-.rp-request-filters button.is-active,
+.rp-request-filters button { border: 1px solid transparent; }
+.rp-request-filters button.is-active { border-color: var(--kr-color-brand); background: var(--kr-color-brand-soft); color: var(--kr-color-brand); }
 .rp-axis-options button.is-active,
 .rp-reason-grid button[aria-pressed='true'] { border: 1px solid var(--kr-color-brand); background: var(--kr-color-brand-soft); color: var(--kr-color-brand); }
 
