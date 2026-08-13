@@ -76,18 +76,12 @@ export function LegalNotice() {
   )
 }
 
-export function LoadingPanel({ label = '조건을 조합하고 있어요' }) {
+export function LoadingPanel({ label = '운송 방법을 찾고 있어요' }) {
   return (
     <div className="rp-loading" role="status">
       <span className="rp-loading__mark"><Icon name="train" size={28} /></span>
       <h2>{label}</h2>
-      <p>기준선과 조정 가능한 조건을 함께 계산합니다.</p>
-      <span className="rp-loading__bar"><i /></span>
-      <ul>
-        <li className="is-done"><Icon name="check" size={13} /> 안전·규정 확인</li>
-        <li className="is-done"><Icon name="check" size={13} /> 내 원래 계획 계산</li>
-        <li><span className="rp-spinner" /> 더 나은 조합 탐색</li>
-      </ul>
+      <p>입력한 조건과 현재 운송 가능 구간을 확인하고 있습니다.</p>
     </div>
   )
 }

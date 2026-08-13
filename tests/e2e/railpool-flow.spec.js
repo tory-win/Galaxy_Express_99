@@ -115,8 +115,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expectUsableLayout(page)
   await page.getByRole('button', { name: '검토 요청 보내기' }).click()
   await expect(page.getByRole('heading', { name: '검토 요청이 전달되었습니다' })).toBeVisible()
-  await expect(page.getByRole('region', { name: '가상 코레일톡 알림톡' })).toContainText('접수 완료')
-  await expect(page.getByText('시연용 · 실제 발송되지 않음')).toBeVisible()
+  await expect(page.getByText('확인 결과도 푸시로 알려드려요')).toBeVisible()
   await capture(page, '05-review-submitted')
 
   expect(createdRequestId).toMatch(/^R-2026-/)
@@ -136,7 +135,7 @@ test('request method order and searchable public-data stations are keyboard usab
 
   const methods = page.locator('.rp-segmented button')
   await expect(methods).toHaveCount(3)
-  await expect(page.getByRole('button', { name: '음성으로 입력' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '전화·음성' })).toBeVisible()
   await page.getByRole('button', { name: '조건 선택' }).click()
 
   const origin = page.getByRole('combobox', { name: /출발지/ })
