@@ -165,11 +165,14 @@
   padding: var(--kr-space-1) var(--kr-space-4);
   gap: var(--kr-space-2);
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 .rp-request-filters::-webkit-scrollbar { display: none; }
 .rp-request-filters button {
   display: inline-flex;
+  flex: 0 0 auto;
   min-width: max-content;
   min-height: 36px;
   padding: 0 var(--kr-space-3);
@@ -181,6 +184,7 @@
   color: var(--kr-color-muted);
   font-size: var(--kr-font-10);
   font-weight: var(--kr-weight-semibold);
+  white-space: nowrap;
 }
 .rp-request-filters button.is-active { border-color: var(--kr-color-brand); background: var(--kr-color-brand-soft); color: var(--kr-color-brand); }
 .rp-request-filters button span { font-variant-numeric: tabular-nums; }
@@ -707,7 +711,7 @@
   font-size: var(--kr-font-10);
   font-weight: var(--kr-weight-semibold);
 }
-.rp-request-filters button { border: 1px solid transparent; }
+.rp-request-filters button { min-width: max-content; border: 1px solid transparent; }
 .rp-request-filters button.is-active { border-color: var(--kr-color-brand); background: var(--kr-color-brand-soft); color: var(--kr-color-brand); }
 .rp-axis-options button.is-active,
 .rp-reason-grid button[aria-pressed='true'] { border: 1px solid var(--kr-color-brand); background: var(--kr-color-brand-soft); color: var(--kr-color-brand); }
