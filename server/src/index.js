@@ -22,6 +22,7 @@ const app = express()
 const port = Number(process.env.PORT || 8320)
 const aiRateLimit = Number(process.env.AI_RATE_LIMIT_PER_MINUTE || 12)
 const aiRateWindows = new Map()
+const currentYear = new Date().getUTCFullYear()
 
 app.disable('x-powered-by')
 app.use(express.json({ limit: '256kb' }))
@@ -257,7 +258,7 @@ app.post('/api/v1/requests', async (request, response, next) => {
 
   try {
     const sequence = await pool.query("select nextval('request_number_seq') as value")
-    const id = `R-2026-${String(sequence.rows[0].value).padStart(4, '0')}`
+    const id = `R-${currentYear}-${String(sequence.rows[0].value).padStart(4, '0')}`
     const input = { ...request.body }
     input.containerCount = Number(input.containerCount)
     input.teu = input.containerCount * (input.containerSize === '40ft' ? 2 : 1)
@@ -285,6 +286,7 @@ app.post('/api/v1/requests/:id/analyze', async (request, response, next) => {
     ])
     const publicDataConnected = sourceStatus.configured && sourceStatus.datasets.every((dataset) => dataset.status === 'connected')
     const proposals = buildProposals({ ...freightRequest.payload, roadCost: freightRequest.road_cost }, freightRequest.id, { ...network, publicDataConnected })
+    const targetTeu = Number(proposals[0]?.targetTeu) || 18
 
     const client = await pool.connect()
     try {
@@ -297,7 +299,20 @@ app.post('/api/v1/requests/:id/analyze', async (request, response, next) => {
           [proposal.id, freightRequest.id, proposal.type, proposal.recommended ? 1 : 2, JSON.stringify(proposal)],
         )
       }
-      await client.query("update freight_requests set status = 'proposal_ready', updated_at = now() where id = $1", [freightRequest.id])
+      await client.query(
+        `insert into pool_summaries (request_id, current_teu, target_teu, unit_cost, status)
+         values ($1,$2,$3,null,'pooling')
+         on conflict (request_id) do update
+           set target_teu = excluded.target_teu, status = 'pooling', updated_at = now()`,
+        [freightRequest.id, Number(freightRequest.teu), targetTeu],
+      )
+      await client.query(
+        `insert into pool_members (request_id, member_id, display_name, region, teu, status, is_owner)
+         values ($1,'owner-rail-logistics-user','내 화물',$2,$3,'confirmed',true)
+         on conflict (request_id, member_id) do update set teu = excluded.teu, updated_at = now()`,
+        [freightRequest.id, freightRequest.payload?.originLabel ?? freightRequest.origin, Number(freightRequest.teu)],
+      )
+      await recalculatePool(client, freightRequest.id)
       await client.query('commit')
     } catch (error) {
       await client.query('rollback')
@@ -307,7 +322,7 @@ app.post('/api/v1/requests/:id/analyze', async (request, response, next) => {
     }
 
     response.json({
-      request: toRequest({ ...freightRequest, status: 'proposal_ready', updated_at: new Date() }),
+      request: toRequest({ ...freightRequest, status: 'pooling', current_teu: freightRequest.teu, target_teu: targetTeu, updated_at: new Date() }),
       baseline: buildBaseline({ ...freightRequest.payload, roadCost: freightRequest.road_cost }),
       proposals,
       sources: sourceStatus,
@@ -368,7 +383,7 @@ app.post('/api/v1/requests/:id/review', async (request, response, next) => {
     const existing = await pool.query('select * from review_requests where request_id = $1', [request.params.id])
     if (existing.rowCount) return response.json({ reviewRequest: existing.rows[0], duplicate: true })
     const sequence = await pool.query("select nextval('review_number_seq') as value")
-    const id = `RV-2026-${String(sequence.rows[0].value).padStart(4, '0')}`
+    const id = `RV-${currentYear}-${String(sequence.rows[0].value).padStart(4, '0')}`
     const result = await pool.query(
       `insert into review_requests (id, request_id, status, payload)
        values ($1,$2,'submitted',$3::jsonb) returning *`,

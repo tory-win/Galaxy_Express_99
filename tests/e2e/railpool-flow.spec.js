@@ -62,7 +62,11 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await page.getByRole('button', { name: '새로운 운송 요청' }).click()
   await expect(page.locator('.rp-form-actions')).toHaveCount(0)
   await page.getByRole('button', { name: '이메일·문서' }).click()
-  await page.getByRole('button', { name: '예시 메일 불러오기' }).click()
+  await page.getByRole('textbox', { name: '메일 또는 문서 내용' }).fill(`제목: 부산신항 산업용 부품 출하 요청
+
+아산 음봉 공장에서 부산신항까지 20ft 컨테이너 4개를 보내려고 합니다.
+8월 18일 출발을 희망하고, 8월 20일 오전 9시까지 도착해야 합니다.
+위험물은 아니며 현재 도로 운송 견적은 312만원입니다.`)
   await page.getByRole('button', { name: '조건 자동 입력' }).click()
   await expect(page.getByText('6개 필수 항목을 인식했습니다')).toBeVisible({ timeout: 15_000 })
 

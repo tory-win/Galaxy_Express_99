@@ -263,12 +263,10 @@ export async function getNetworkPlanningContext(input = {}) {
   const destination = cleanText(input.destination, '', 80)
   const result = await pool.query(
     `select count(*)::int as matching_agents,
-            coalesce(sum(fr.teu), 0) as matching_teu
-       from freight_requests fr
-       join shipper_agents sa on sa.id = fr.user_id
-      where fr.status = 'matching'
-        and sa.last_seen_at > now() - interval '20 seconds'
-        and ($1 = '' or lower(fr.destination) = lower($1))`,
+            coalesce(sum((sa.payload->>'teu')::numeric), 0) as matching_teu
+       from shipper_agents sa
+      where sa.last_seen_at > now() - interval '20 seconds'
+        and ($1 = '' or lower(sa.payload->>'destination') = lower($1))`,
     [destination],
   )
   return {
@@ -279,7 +277,7 @@ export async function getNetworkPlanningContext(input = {}) {
 
 export async function getActivePoolAssignment() {
   const result = await pool.query(
-    `select ps.request_id, ps.current_teu, ps.target_teu, ps.status, ps.updated_at
+    `select ps.request_id, ps.current_teu, ps.target_teu, ps.status, ps.updated_at, fr.destination
        from pool_summaries ps
        join freight_requests fr on fr.id = ps.request_id
       where fr.user_id = 'rail-logistics-user'
@@ -294,6 +292,7 @@ export async function getActivePoolAssignment() {
     currentTeu: Number(row.current_teu),
     targetTeu: Number(row.target_teu),
     status: row.status,
+    destination: row.destination,
     updatedAt: row.updated_at,
   }
 }
