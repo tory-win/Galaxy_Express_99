@@ -190,6 +190,7 @@ test('home recording asks for microphone access, records, and opens request step
   await page.getByRole('button', { name: '녹음 시작' }).click()
   await expect(page.getByRole('button', { name: '녹음 종료' })).toBeVisible()
   await expect.poll(() => page.evaluate(() => window.__microphoneRequests)).toBe(1)
+  await expect(page.getByRole('textbox', { name: '말씀하신 화물 요청' })).toHaveValue('아산에서 부산신항까지 보내고 싶어요')
   await page.getByRole('button', { name: '녹음 종료' }).click()
 
   await expect(page.getByText('3단계 중 1단계')).toBeVisible()
