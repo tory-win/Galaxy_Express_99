@@ -146,6 +146,25 @@
 .rp-network-pulse { display: block; flex: 0 0 auto; width: 10px; height: 10px; border: 2px solid var(--kr-color-line-strong); border-radius: 50%; background: var(--kr-color-muted); }
 .rp-network-pulse.is-live { border-color: var(--kr-color-positive); background: var(--kr-color-positive); }
 
+.rp-eco-points {
+  display: flex;
+  min-height: 76px;
+  margin: calc(var(--kr-space-1) * -1) 0 var(--kr-space-3);
+  padding: var(--kr-space-3);
+  align-items: center;
+  gap: var(--kr-space-2);
+  border: 1px solid var(--kr-color-positive);
+  border-radius: var(--kr-radius-card);
+  background: var(--kr-color-positive-soft);
+  color: var(--kr-color-positive-strong);
+}
+.rp-eco-points__icon { display: grid; flex: 0 0 auto; width: var(--kr-control-height-md); height: var(--kr-control-height-md); place-items: center; border-radius: 50%; background: var(--kr-color-surface); }
+.rp-eco-points > div { display: flex; flex: 1; flex-direction: column; }
+.rp-eco-points small { font-size: var(--kr-font-10); }
+.rp-eco-points strong { font-size: var(--kr-font-16); font-variant-numeric: tabular-nums; }
+.rp-eco-points p { margin: 0; color: var(--kr-color-body); font-size: var(--kr-font-10); line-height: 1.45; text-align: right; }
+.rp-eco-points p span { color: var(--kr-color-positive-strong); font-weight: var(--kr-weight-semibold); }
+
 .rp-request-filters {
   display: flex;
   margin: calc(var(--kr-space-1) * -1) calc(var(--kr-space-4) * -1) var(--kr-space-3);
@@ -187,6 +206,8 @@
 .rp-request-card > strong i { margin: 0 var(--kr-space-1); color: var(--kr-color-brand); font-style: normal; }
 .rp-request-card__meta { display: flex; align-items: center; gap: var(--kr-space-2); color: var(--kr-color-muted); font-size: var(--kr-font-10); }
 .rp-request-card__meta time { margin-left: auto; }
+.rp-request-card__eco { display: flex; margin-top: var(--kr-space-2); padding-top: var(--kr-space-2); align-items: center; gap: var(--kr-space-1); border-top: 1px solid var(--kr-color-line); color: var(--kr-color-positive-strong); font-size: var(--kr-font-10); }
+.rp-request-card__eco strong { margin-left: auto; font-size: var(--kr-font-11); font-variant-numeric: tabular-nums; }
 .rp-alert-card {
   display: flex;
   width: 100%;

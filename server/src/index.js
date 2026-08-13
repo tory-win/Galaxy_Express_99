@@ -36,6 +36,10 @@ app.use((request, response, next) => {
 function toRequest(row) {
   const payload = row.payload ?? {}
   const departureDate = formatDepartureDate(row.departure_date)
+  const carbonSavingsTons = Number(row.carbon_savings_tons)
+  const ecoPoints = Number.isFinite(carbonSavingsTons) && carbonSavingsTons > 0
+    ? Math.round(carbonSavingsTons * 1_000)
+    : null
   const statusLabels = {
     analyzing: '조건 확인 중',
     proposal_ready: '운송 제안 도착 · 2건',
@@ -56,6 +60,7 @@ function toRequest(row) {
     statusLabel: row.current_teu !== undefined && ['pooling', 'target_reached'].includes(row.status)
       ? `함께 보내기 · ${formatTeu(row.current_teu)}/${formatTeu(row.target_teu)}TEU`
       : statusLabels[row.status] ?? payload.statusLabel ?? '상태 확인 중',
+    ecoPoints,
     updatedAt: formatRelativeTime(row.updated_at),
   }
 }
@@ -111,9 +116,17 @@ app.get('/api/v1/sources', async (_request, response, next) => {
 app.get('/api/v1/requests', async (_request, response, next) => {
   try {
     const result = await pool.query(
-      `select fr.*, ps.current_teu, ps.target_teu
+      `select fr.*, ps.current_teu, ps.target_teu,
+              recommended.payload->>'carbonSavings' as carbon_savings_tons
          from freight_requests fr
          left join pool_summaries ps on ps.request_id = fr.id
+         left join lateral (
+           select p.payload
+             from proposals p
+            where p.request_id = fr.id
+            order by p.rank asc
+            limit 1
+         ) recommended on true
         where fr.user_id = 'rail-logistics-user'
         order by fr.updated_at desc limit 20`,
     )

@@ -27,6 +27,7 @@ function eventCopy(event) {
 export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequest, onOpenRequest, onOpenPool, onOpenNotifications }) {
   const latestEvent = network.recentEvents?.[0]
   const [requestFilter, setRequestFilter] = useState('all')
+  const totalEcoPoints = useMemo(() => requests.reduce((total, request) => total + (request.ecoPoints ?? 0), 0), [requests])
   const requestCounts = useMemo(() => Object.fromEntries(REQUEST_FILTERS.map((filter) => [
     filter.id,
     filter.statuses ? requests.filter((request) => filter.statuses.includes(request.status)).length : requests.length,
@@ -53,6 +54,13 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
       </section>
 
       <SectionHeading id="rail-logistics-requests-title" title={`내 운송 요청 ${requests.length}건`} />
+      {totalEcoPoints > 0 && (
+        <section className="rp-eco-points" aria-label="내 운송 친환경 포인트">
+          <span className="rp-eco-points__icon"><Icon name="leaf" size={19} /></span>
+          <div><small>예상 친환경 포인트</small><strong>{new Intl.NumberFormat('ko-KR').format(totalEcoPoints)}P</strong></div>
+          <p>철도 전환 시 예상 CO₂ 절감량 기준<br /><span>1kg 절감 = 1P</span></p>
+        </section>
+      )}
       <div className="rp-request-filters" role="group" aria-label="내 운송 요청 상황별 필터">
         {REQUEST_FILTERS.map((filter) => (
           <button
@@ -74,6 +82,7 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
               <div className="rp-request-card__top"><span>{request.id}</span><StatusPill tone={STATUS_TONE[request.status] ?? 'blue'}>{request.statusLabel}</StatusPill></div>
               <strong>{request.origin} <i>→</i> {request.destination}</strong>
               <div className="rp-request-card__meta"><span>{request.quantity}</span><span>{request.departureDate}</span><time>{request.updatedAt}</time></div>
+              {request.ecoPoints > 0 && <div className="rp-request-card__eco"><Icon name="leaf" size={13} /><span>예상 친환경 포인트</span><strong>+{new Intl.NumberFormat('ko-KR').format(request.ecoPoints)}P</strong></div>}
             </button>
           )
         })}
