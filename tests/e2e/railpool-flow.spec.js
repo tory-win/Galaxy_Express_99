@@ -61,7 +61,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expectUsableLayout(page)
   await capture(page, '02-railpool-dashboard')
 
-  await page.getByRole('button', { name: '새로운 운송 요청' }).click()
+  await page.getByRole('button', { name: 'AI에게 찾아달라하기' }).click()
   await expect(page.locator('.rp-form-actions')).toHaveCount(0)
   await page.getByRole('button', { name: '이메일·문서' }).click()
   await page.getByRole('textbox', { name: '메일 또는 문서 내용' }).fill(`제목: 부산신항 산업용 부품 출하 요청
@@ -138,7 +138,7 @@ test('refresh keeps the Rail Logistics context instead of resetting to Korail ho
 
 test('request method order and searchable public-data stations are keyboard usable', async ({ page }) => {
   await page.goto('./#rail-logistics')
-  await page.getByRole('button', { name: '새로운 운송 요청' }).click()
+  await page.getByRole('button', { name: 'AI에게 찾아달라하기' }).click()
 
   const methods = page.locator('.rp-segmented button')
   await expect(methods).toHaveCount(3)

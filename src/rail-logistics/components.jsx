@@ -21,7 +21,7 @@ export function RailHeader({ title, eyebrow, onBack }) {
 export function RailBottomNav({ active, unread = 0, onNavigate }) {
   const items = [
     { id: 'dashboard', label: '내 운송', icon: 'home' },
-    { id: 'request', label: '새로운 운송 요청', icon: 'plus' },
+    { id: 'request', label: 'AI에게 찾아달라하기', icon: 'plus' },
     { id: 'notifications', label: '알림', icon: 'bell', unread },
   ]
   return (
