@@ -16,7 +16,6 @@ let cycle = 0
 let running = false
 let lastSuccessAt = 0
 let lastError = ''
-let lastPublishedBucket = -1
 let currentAssignmentId = ''
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -50,24 +49,6 @@ async function api(path, options = {}) {
   return payload
 }
 
-function freightPayload() {
-  const departure = new Date()
-  departure.setDate(departure.getDate() + 6 + (Number(agentId.slice(-2)) % 2))
-  const deadline = new Date(departure)
-  deadline.setDate(deadline.getDate() + 2)
-  deadline.setHours(18, 0, 0, 0)
-  return {
-    origin: persona.origin,
-    destination: persona.destination,
-    containerSize: persona.containerSize,
-    containerCount: persona.containerCount,
-    teu: persona.teu,
-    departureDate: departure.toISOString().slice(0, 10),
-    deadline: deadline.toISOString(),
-    roadCost: persona.roadCost,
-  }
-}
-
 async function register() {
   await api('/agents/register', {
     method: 'POST',
@@ -78,7 +59,7 @@ async function register() {
       cargoType: persona.cargoType,
       strategy: persona.strategy,
       containerId: os.hostname(),
-      payload: { poolRole: persona.poolRole },
+      payload: { poolRole: persona.poolRole, destination: persona.destination, teu: persona.teu },
     }),
   })
 }
@@ -111,15 +92,9 @@ async function action(type, idempotencyKey, payload) {
 async function runOneStep() {
   cycle += 1
   const now = Date.now()
-  const publishBucket = Math.floor(now / 300_000)
-  if (lastPublishedBucket !== publishBucket) {
-    await action('publish_request', `publish:${publishBucket}`, freightPayload())
-    lastPublishedBucket = publishBucket
-    return
-  }
-
   const activeAssignment = await assignment()
   if (!activeAssignment) return
+  if (activeAssignment.destination !== persona.destination) return
   if (currentAssignmentId && currentAssignmentId !== activeAssignment.requestId) memberships.set(currentAssignmentId, false)
   currentAssignmentId = activeAssignment.requestId
 

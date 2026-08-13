@@ -48,6 +48,12 @@ create index if not exists pool_members_request_idx on pool_members(request_id, 
 alter table freight_requests alter column user_id set default 'rail-logistics-user';
 update freight_requests set user_id = 'rail-logistics-user' where user_id = 'korail-demo-user';
 update pool_members set member_id = 'owner-rail-logistics-user' where member_id = 'owner-korail-demo-user';
+
+-- 이전 버전의 에이전트가 화면 시연을 위해 주기적으로 만든 기초 화물을 제거한다.
+-- 이후 에이전트는 사용자 요청에만 반응하며 임의 요청을 만들지 않는다.
+delete from freight_requests
+ where id like 'AR-%'
+   and user_id like 'shipper-%';
 `
 
 export async function ensureSchema(database) {

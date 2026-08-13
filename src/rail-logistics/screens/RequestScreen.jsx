@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AXIS_OPTIONS, DEFAULT_FORM, EXAMPLE_EMAIL, FREIGHT_STATIONS, formatManWon } from '../demoData.js'
+import { AXIS_OPTIONS, DEFAULT_FORM, FREIGHT_STATIONS, formatManWon } from '../demoData.js'
 import { ConfidenceBadge, Icon, PrimaryButton, SecondaryButton, SectionHeading } from '../components.jsx'
 import { SearchIcon } from '../../design-system/index.js'
 
@@ -236,7 +236,6 @@ export function RequestScreen({ onAnalyze, onExtract, busy, initialVoiceText = '
                 </>
               )}
               <textarea aria-label={mode === 'voice' ? '음성 인식 텍스트' : '메일 또는 문서 내용'} value={emailText} onChange={(event) => setEmailText(event.target.value)} placeholder={mode === 'voice' ? '예: 아산에서 부산신항까지 20피트 4개, 8월 18일 출발이요…' : '출발지, 도착지, 수량, 날짜가 포함된 메일 내용을 붙여넣어 주세요.'} />
-              {mode === 'email' && <button type="button" className="rp-sample-button" onClick={() => setEmailText(EXAMPLE_EMAIL)}>예시 메일 불러오기</button>}
               <PrimaryButton disabled={busy || listening || !emailText.trim()} onClick={handleExtract}>{busy ? '조건을 읽는 중…' : mode === 'voice' ? '받아쓴 내용으로 조건 입력' : '조건 자동 입력'}</PrimaryButton>
               {extracted && (
                 <div className="rp-extracted-summary">
