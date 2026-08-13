@@ -19,15 +19,15 @@ export function RailHeader({ title, eyebrow, onBack, onNotifications, unread = 1
   )
 }
 
-export function RailBottomNav({ active, unread = 0, recording = false, onNavigate }) {
+export function RailBottomNav({ active, unread = 0, onNavigate }) {
   const items = [
     { id: 'dashboard', label: '내 운송', icon: 'home' },
-    { id: 'request', label: recording ? '녹음 종료' : '음성 요청', icon: recording ? 'stop' : 'mic' },
+    { id: 'request', label: '새로운 운송 요청', icon: 'plus' },
     { id: 'notifications', label: '알림', icon: 'bell', unread },
   ]
   return (
     <SubBottomNav
-      className={`rp-bottom-nav ${recording ? 'is-recording' : ''}`}
+      className="rp-bottom-nav"
       active={active}
       onChange={onNavigate}
       items={items.map((item) => ({ ...item, badge: item.unread || undefined, icon: <Icon name={item.icon} size={19} /> }))}

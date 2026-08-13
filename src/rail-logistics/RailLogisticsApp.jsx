@@ -286,10 +286,24 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     else navigate('dashboard')
   }
 
-  const startQuickVoiceRequest = () => {
+  const startQuickVoiceRequest = async () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
       setError('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 또는 Edge에서 이용해 주세요.')
+      return
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('이 브라우저에서는 마이크 권한을 요청할 수 없습니다.')
+      return
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach((track) => track.stop())
+    } catch {
+      setRecording(false)
+      setError('녹음을 시작하려면 마이크 권한을 허용해 주세요.')
       return
     }
 
@@ -326,14 +340,9 @@ export function RailLogisticsApp({ onExit, onNotify }) {
   }
 
   const handleBottomNavigation = (destination) => {
-    if (destination !== 'request') {
-      if (recording) quickRecognitionRef.current?.abort()
-      setRecording(false)
-      navigate(destination)
-      return
-    }
-    if (recording) stopQuickVoiceRequest()
-    else startQuickVoiceRequest()
+    if (recording) quickRecognitionRef.current?.abort()
+    setRecording(false)
+    navigate(destination)
   }
 
   return (
@@ -343,7 +352,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
       <main ref={bodyRef} className={`rp-screen-body rp-screen-body--${view}`} tabIndex="-1" aria-label={`${header[0]} 화면`} aria-busy={busy}>
         {error && <div className="rp-connection-error" role="status">{error}</div>}
         {busy && view === 'request' && <div className="rp-loading-layer"><LoadingPanel /></div>}
-        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} onNewRequest={() => navigate('request')} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
+        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} recording={recording} onToggleRecording={recording ? stopQuickVoiceRequest : startQuickVoiceRequest} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
         {view === 'request' && <RequestScreen onAnalyze={analyze} onExtract={extract} busy={busy} initialVoiceText={quickVoiceText} onInitialVoiceTextConsumed={() => setQuickVoiceText('')} />}
         {view === 'proposals' && baseline && proposals.length > 0 && <ProposalsScreen baseline={baseline} proposals={proposals} onProceed={proceed} onCompare={(proposal) => { setSelectedProposal(proposal); navigate('compare') }} onReject={reject} onModify={() => navigate('request')} />}
         {view === 'compare' && baseline && selectedProposal && <ComparisonScreen baseline={baseline} proposals={proposals} initialProposal={selectedProposal} onBack={() => navigate('proposals')} onProceed={proceed} />}
@@ -351,7 +360,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
         {view === 'disruption' && <DisruptionScreen network={network} pool={poolState} onOpenPool={openPoolFromAlert} onLeave={() => navigate('dashboard')} />}
         {view === 'review' && selectedProposal && <ReviewScreen requestId={requestId} requestInput={requestInput} pool={poolState} proposal={selectedProposal} onSubmit={submitReview} onDone={() => navigate('dashboard')} busy={busy} />}
       </main>
-      <RailBottomNav active={activeTab} unread={network.recentEvents?.some((event) => event.type === 'pool_left') ? 1 : 0} recording={recording} onNavigate={handleBottomNavigation} />
+      <RailBottomNav active={activeTab} unread={network.recentEvents?.some((event) => event.type === 'pool_left') ? 1 : 0} onNavigate={handleBottomNavigation} />
     </div>
   )
 }

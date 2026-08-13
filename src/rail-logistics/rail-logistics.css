@@ -46,8 +46,6 @@
 }
 .rp-screen-body::-webkit-scrollbar { display: none; }
 .rp-screen-body:focus { outline: none; }
-.rp-bottom-nav.is-recording button:nth-child(2) { color: var(--kr-color-danger); }
-
 .rp-sr-only {
   position: absolute;
   width: 1px;
@@ -130,6 +128,7 @@
 }
 .rp-hero-card h1 { position: relative; z-index: 1; margin: 0; font-size: var(--kr-font-20); line-height: 1.32; letter-spacing: -0.7px; }
 .rp-hero-card .rp-primary-button { position: relative; z-index: 1; width: auto; min-height: var(--kr-control-height-md); margin-top: var(--kr-space-3); }
+.rp-hero-card .rp-primary-button.is-recording { background: var(--kr-color-danger); }
 
 .rp-network-card {
   margin-bottom: var(--kr-space-5);
