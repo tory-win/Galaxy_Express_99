@@ -32,7 +32,7 @@ export function ReviewScreen({ requestId, requestInput, pool, proposal, onSubmit
         <p>이 요청은 예약이나 계약이 아닙니다.<br />영업일 기준 1~2일 내 담당자가 연락드립니다.</p>
         <div className="rp-review-number"><span>검토 요청 번호</span><strong>{reviewId}</strong><small>문의하실 때 이 번호를 알려주세요.</small></div>
         <section className="rp-next-steps"><strong>다음 절차</strong><ol><li><i>1</i><span>코레일 담당자가 운임·적재 가능 여부를 확인합니다.</span></li><li><i>2</i><span>담당자가 등록된 연락처로 조건을 회신합니다.</span></li><li><i>3</i><span>회신 후 별도 운송 계약을 검토합니다.</span></li></ol></section>
-        <section className="rp-review-notice"><strong>확인 결과도 푸시로 알려드려요</strong><p>담당자 배정, 추가 정보 요청, 운임·적재 확인 완료를 단계별로 알립니다. 확인이 끝나면 확정 운임과 수락·취소 버튼이 있는 결과 화면이 열립니다.</p></section>
+        <section className="rp-review-notice"><strong>진행 상황과 확정 결과도 알려드려요</strong><p>담당자 배정, 추가 정보 요청, 운임·적재 확인 완료를 앱 푸시와 카카오 알림톡(코레일톡)으로 단계별 안내합니다.</p><small>현재 알림톡은 시연용이며 실제 메시지는 발송되지 않습니다.</small></section>
         <PrimaryButton onClick={onDone}>내 운송 목록으로</PrimaryButton>
       </div>
     )

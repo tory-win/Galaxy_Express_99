@@ -1,4 +1,4 @@
-import { Icon, PrimaryButton, SectionHeading, StatusPill } from '../components.jsx'
+import { Icon, SectionHeading, StatusPill } from '../components.jsx'
 
 const STATUS_TONE = {
   proposal_ready: 'blue',
@@ -22,7 +22,7 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
     <div className="rp-dashboard">
       <section className="rp-hero-card" aria-labelledby="rail-logistics-start-title">
         <h1 id="rail-logistics-start-title">화물 조건을 등록하고<br />함께 보낼 화물을 찾아보세요</h1>
-        <PrimaryButton onClick={onNewRequest}><Icon name="plus" size={16} /> 운송 요청하기</PrimaryButton>
+        <button type="button" className="rp-voice-start" aria-label="음성으로 운송 요청 시작" onClick={onNewRequest}><Icon name="mic" size={25} /></button>
       </section>
 
       <section className="rp-network-card" aria-label="함께 보내기 네트워크 현황">

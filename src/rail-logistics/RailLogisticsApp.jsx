@@ -54,9 +54,18 @@ export function RailLogisticsApp({ onExit, onNotify }) {
   const [liveStatus, setLiveStatus] = useState('connecting')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [alimtalk, setAlimtalk] = useState(null)
   const bodyRef = useRef(null)
   const activePoolRef = useRef('')
   const refreshTimerRef = useRef(null)
+  const alimtalkTimerRef = useRef(null)
+  const previousPoolRef = useRef(null)
+
+  const previewAlimtalk = (title, message) => {
+    window.clearTimeout(alimtalkTimerRef.current)
+    setAlimtalk({ title, message })
+    alimtalkTimerRef.current = window.setTimeout(() => setAlimtalk(null), 4_500)
+  }
 
   const navigate = (nextView) => {
     const normalized = nextView === 'notifications' ? 'disruption' : nextView
@@ -144,6 +153,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
       active = false
       unsubscribe()
       window.clearTimeout(refreshTimerRef.current)
+      window.clearTimeout(alimtalkTimerRef.current)
     }
   }, [])
 
@@ -152,6 +162,21 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     bodyRef.current?.scrollTo({ top: 0, behavior: 'auto' })
     bodyRef.current?.focus({ preventScroll: true })
   }, [view])
+
+  useEffect(() => {
+    if (!poolState) {
+      previousPoolRef.current = null
+      return
+    }
+    const previous = previousPoolRef.current
+    previousPoolRef.current = { currentTeu: poolState.currentTeu, status: poolState.status }
+    if (!previous || previous.currentTeu === poolState.currentTeu) return
+    const filled = poolState.currentTeu >= poolState.targetTeu
+    previewAlimtalk(
+      filled ? '함께 보내기 목표 달성' : '모집 진행 상황 변경',
+      filled ? '목표 물량을 채웠습니다. 코레일 검토를 요청할 수 있습니다.' : `현재 ${poolState.currentTeu}/${poolState.targetTeu}TEU가 모였습니다.`,
+    )
+  }, [poolState?.currentTeu, poolState?.targetTeu, poolState?.status])
 
   const header = TITLES[view] ?? TITLES.dashboard
   const activeTab = useMemo(() => view === 'request' ? 'request' : view === 'disruption' ? 'notifications' : 'dashboard', [view])
@@ -209,6 +234,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
       setProposals(result.proposals ?? [])
       setSelectedProposal(result.proposals?.[0] ?? null)
       await refreshRequests()
+      previewAlimtalk('운송 요청 접수 완료', `${form.origin} → ${form.destination} 요청이 접수되었습니다.`)
       navigate('proposals')
     } catch (analyzeError) {
       setError(analyzeError.message)
@@ -225,6 +251,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
       setSelectedProposal(proposal)
       activePoolRef.current = requestId
       setPoolState(result.pool)
+      previewAlimtalk('진행 상황 변경', '선택한 제안으로 함께 보내기 모집을 시작했습니다.')
       navigate('pool')
     } catch (decisionError) {
       setError(decisionError.message)
@@ -247,7 +274,9 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     setBusy(true)
     setError('')
     try {
-      return await submitReviewRequest(requestId, payload)
+      const result = await submitReviewRequest(requestId, payload)
+      previewAlimtalk('코레일 검토 접수 완료', '담당자 검토가 접수되었습니다. 진행 상황과 확정 결과도 알려드립니다.')
+      return result
     } catch (reviewError) {
       setError(reviewError.message)
       throw reviewError
@@ -297,6 +326,14 @@ export function RailLogisticsApp({ onExit, onNotify }) {
         {view === 'review' && selectedProposal && <ReviewScreen requestId={requestId} requestInput={requestInput} pool={poolState} proposal={selectedProposal} onSubmit={submitReview} onDone={() => navigate('dashboard')} busy={busy} />}
       </main>
       <RailBottomNav active={activeTab} unread={network.recentEvents?.some((event) => event.type === 'pool_left') ? 1 : 0} onNavigate={navigate} />
+      {alimtalk && (
+        <aside className="rp-alimtalk-preview" role="status" aria-live="polite">
+          <div className="rp-alimtalk-preview__head"><span>가상 알림톡</span><b>코레일톡</b><button type="button" aria-label="알림톡 미리보기 닫기" onClick={() => setAlimtalk(null)}>×</button></div>
+          <strong>{alimtalk.title}</strong>
+          <p>{alimtalk.message}</p>
+          <small>시연용 화면 · 실제 메시지는 발송되지 않습니다</small>
+        </aside>
+      )}
     </div>
   )
 }
