@@ -39,6 +39,20 @@ test('builds two ranked proposals from the baseline and live network capacity', 
   assert.equal(proposals[0].breakdown[2][2], '확인 필요')
 })
 
+test('returns one exact-match plan when capacity and the requested deadline already fit', () => {
+  const proposals = buildProposals(
+    { roadCost: 3_120_000, teu: 4, departureDate: '2026-08-18', deadline: '2026-08-20T15:00', origin: '서화성', destination: '부산신항' },
+    'R-EXACT',
+    { matchingAgents: 8, matchingTeu: 24, publicDataConnected: true },
+  )
+
+  assert.equal(proposals.length, 1)
+  assert.equal(proposals[0].exactMatch, true)
+  assert.equal(proposals[0].type, '조건 일치 운송안')
+  assert.equal(proposals[0].deadlineMet, true)
+  assert.deepEqual(proposals[0].axes, [])
+})
+
 test('does not invent unsupported freight values during rule extraction', () => {
   const result = extractConditionsFromText('일반 화물을 보내고 싶습니다.')
   assert.deepEqual(result.fields, {})

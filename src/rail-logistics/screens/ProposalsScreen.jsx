@@ -32,7 +32,7 @@ function ProposalCard({ proposal, baseline, onProceed, onCompare, onReject }) {
       <dl className="rp-proposal-facts">
         <div><dt>이 제안이 유리한 이유</dt><dd>{proposal.reason}</dd></div>
         <div><dt>얻는 것</dt><dd className="is-gain">{proposal.gains}</dd></div>
-        <div><dt>감수할 것</dt><dd className="is-loss">{proposal.tradeoff}</dd></div>
+        <div><dt>{proposal.exactMatch ? '조건 변경' : '감수할 것'}</dt><dd className={proposal.exactMatch ? 'is-gain' : 'is-loss'}>{proposal.tradeoff}</dd></div>
         <div><dt>주의</dt><dd>{proposal.caution}</dd></div>
       </dl>
 
@@ -46,7 +46,7 @@ function ProposalCard({ proposal, baseline, onProceed, onCompare, onReject }) {
         </div>
       )}
 
-      <div className="rp-proposal-actions"><SecondaryButton onClick={() => onReject(proposal)}>거절하고 다른 제안 보기</SecondaryButton><PrimaryButton onClick={() => onProceed(proposal)}>추천안 적용하기</PrimaryButton><TertiaryButton onClick={() => onCompare(proposal)}>원래 계획과 상세 비교</TertiaryButton></div>
+      <div className="rp-proposal-actions">{!proposal.exactMatch && <SecondaryButton onClick={() => onReject(proposal)}>거절하고 다른 제안 보기</SecondaryButton>}<PrimaryButton onClick={() => onProceed(proposal)}>{proposal.exactMatch ? '이 조건으로 진행하기' : '추천안 적용하기'}</PrimaryButton><TertiaryButton onClick={() => onCompare(proposal)}>원래 계획과 상세 비교</TertiaryButton></div>
     </article>
   )
 }
@@ -114,7 +114,7 @@ export function ProposalsScreen({ baseline, proposals, onProceed, onCompare, onR
     <div className="rp-proposals-screen">
       <section className="rp-proposal-opening">
         <span><Icon name="train" size={18} /></span>
-        <div><small>운송 제안</small><h1>현재 계획보다<br />{formatManWon(leadProposal.savings)} 낮은 방법이 있습니다.</h1><p>{leadProposal.tradeoff}. 아래에서 비용과 일정 차이를 확인해 주세요.</p></div>
+        <div><small>{leadProposal.exactMatch ? '조건 일치 결과' : '운송 제안'}</small><h1>{leadProposal.exactMatch ? <>입력한 조건 그대로<br />운송할 수 있습니다.</> : <>현재 계획보다<br />{formatManWon(leadProposal.savings)} 낮은 방법이 있습니다.</>}</h1><p>{leadProposal.exactMatch ? '별도 대안 없이 이 운송안의 비용과 세부 조건만 확인해 주세요.' : `${leadProposal.tradeoff}. 아래에서 비용과 일정 차이를 확인해 주세요.`}</p></div>
       </section>
 
       <section className="rp-baseline-card">
@@ -123,14 +123,14 @@ export function ProposalsScreen({ baseline, proposals, onProceed, onCompare, onR
         <dl><div><dt>전체 비용</dt><dd>{formatManWon(baseline.cost)}</dd></div><div><dt>전체 시간</dt><dd>{baseline.duration}</dd></div><div><dt>도착 예정</dt><dd>{baseline.arrival}</dd></div></dl>
       </section>
 
-      <nav className="rp-proposal-switcher" aria-label="AI 역제안 빠른 선택">
+      {!leadProposal.exactMatch && <nav className="rp-proposal-switcher" aria-label="AI 역제안 빠른 선택">
         {proposals.map((proposal, index) => (
           <button type="button" key={proposal.id} aria-current={index === activeIndex ? 'true' : undefined} className={index === activeIndex ? 'is-active' : ''} onClick={() => setActiveIndex(index)}>
             <small>대안 {index + 1}</small><strong>{proposal.type.replace(' 제안', '')}</strong><span>−{formatManWon(proposal.savings)}</span>
           </button>
         ))}
-      </nav>
-      <p className="rp-swipe-hint" aria-live="polite"><span>{activeIndex + 1} / {proposals.length}</span> 좌우로 밀어 다른 제안 보기</p>
+      </nav>}
+      {!leadProposal.exactMatch && <p className="rp-swipe-hint" aria-live="polite"><span>{activeIndex + 1} / {proposals.length}</span> 좌우로 밀어 다른 제안 보기</p>}
 
       <div className="rp-proposal-stack" onTouchStart={handleSwipeStart} onTouchEnd={handleSwipeEnd}>
         <ProposalCard key={activeProposal.id} proposal={activeProposal} baseline={baseline} onProceed={onProceed} onCompare={onCompare} onReject={setRejecting} />

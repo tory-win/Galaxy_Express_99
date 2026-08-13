@@ -27,11 +27,11 @@ export function ComparisonScreen({ baseline, proposals, initialProposal, onBack,
     ['절감액·절감률', '기준', `−${formatManWon(proposal.savings)} · −${proposal.savingsRate}%`],
     ['함께 가는 화물', '없음', `${proposal.pooledTeu}TEU / 목표 ${proposal.targetTeu}TEU`],
     ['확정 가능성', '확정', proposal.pooledTeu >= 15 ? '높음 · 예상값' : '보통 · 예상값'],
-    ['바뀌는 조건', '없음', proposal.axes.join(' · ')],
+    ['바뀌는 조건', '없음', proposal.axes.length ? proposal.axes.join(' · ') : '없음'],
     ['정보 신뢰도', '입력값 기준', proposal.trustSummary],
     ['탄소 배출', `${baseline.carbonTons}톤`, valueWithBadge(`${proposal.carbonTons}톤 · −${proposal.carbonRate}%`, '예상값')],
     ['전환교통 지원사업', '해당 없음', '대상 가능 · 사전 협약 필요'],
-    ['사용한 조정 축', '없음', proposal.axes.join(' · ')],
+    ['사용한 조정 축', '없음', proposal.axes.length ? proposal.axes.join(' · ') : '없음'],
   ]
 
   return (

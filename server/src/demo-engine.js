@@ -111,6 +111,44 @@ export function buildProposals(input = {}, requestId = 'REQUEST', network = {}) 
     ? `현재 같은 목적지 화주 ${matchingAgents}곳의 ${matchingTeu}TEU가 연결되어 있어 목표 물량을 구성할 수 있습니다.`
     : '현재 연결된 같은 목적지 화물이 없어 참여 화물을 더 기다려야 합니다.'
   const scheduleConfidence = network.publicDataConnected ? '철도 시간표 확인 완료' : '철도 시간표 확인 필요'
+  const exactDeadline = deadlineStatus(input.departureDate, input.deadline, 13)
+  if (network.publicDataConnected && potentialTeu >= targetTeu && exactDeadline.deadlineMet) {
+    return [{
+      id: `${requestId}-P0`,
+      engineVersion: 3,
+      type: '조건 일치 운송안',
+      title: '입력한 조건 그대로 운송할 수 있습니다',
+      summary: `출발일과 도착 마감을 바꾸지 않고 같은 목적지 화주 ${matchingAgents}곳과 함께 보낼 수 있습니다.`,
+      recommended: true,
+      exactMatch: true,
+      before: `${formatDate(input.departureDate)} 출발 · 도로 운송`,
+      after: `${formatDate(input.departureDate)} 출발 · 철도 함께 보내기`,
+      cost: firstCost,
+      savings: baselineCost - firstCost,
+      savingsRate: 18,
+      duration: '31시간',
+      timeDelta: '변경 없음',
+      departure: formatDate(input.departureDate),
+      arrival: `${formatDate(input.departureDate, 2)} 13:00`,
+      station: `${input.origin} → ${destination}`,
+      ...exactDeadline,
+      pooledTeu: potentialTeu,
+      targetTeu,
+      matchingAgents,
+      matchingTeu,
+      carbonTons: firstCarbon,
+      carbonSavings: firstCarbonSavings,
+      carbonRate: 62,
+      reason: networkReason,
+      gains: `조건 변경 없이 전체 비용 ${Math.round((baselineCost - firstCost) / 10_000)}만원 절감 · 탄소 약 ${firstCarbonSavings}톤 절감`,
+      tradeoff: '입력한 출발일·도착 마감 변경 없음',
+      caution: '최종 운임과 적재 가능 여부는 코레일 담당자 확인이 필요합니다.',
+      trustSummary: '입력 조건을 모두 충족합니다',
+      confidence: [scheduleConfidence, '최종 운임 확인 필요', '함께 갈 물량 확인 완료'],
+      axes: [],
+      breakdown: [['공장→역 트럭비', firstBreakdown[0], '예상값'], ['상하차비', firstBreakdown[1], '예상값'], ['철도운임', firstBreakdown[2], '확인 필요'], ['역→목적지 트럭비', firstBreakdown[3], '예상값'], ['대기·보관비', 0, '확인 완료']],
+    }]
+  }
   return [
     {
       id: `${requestId}-P1`,
