@@ -24,7 +24,7 @@ function eventCopy(event) {
   return '함께 보낼 수 있는 화물 조건을 계속 확인하고 있습니다.'
 }
 
-export function DashboardScreen({ requests, network, liveStatus, busy, onOpenRequest, onOpenPool, onOpenNotifications }) {
+export function DashboardScreen({ requests, network, liveStatus, busy, onCreateRequest, onOpenRequest, onOpenPool, onOpenNotifications }) {
   const latestEvent = network.recentEvents?.[0]
   const [requestFilter, setRequestFilter] = useState('all')
   const totalEcoPoints = useMemo(() => requests.reduce((total, request) => total + (request.ecoPoints ?? 0), 0), [requests])
@@ -48,7 +48,13 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onOpenReq
         <p><Icon name={latestEvent?.type === 'pool_left' ? 'alert' : 'train'} size={15} /> {eventCopy(latestEvent)}</p>
       </section>
 
-      <SectionHeading id="rail-logistics-requests-title" title={`내 운송 요청 ${requests.length}건`} />
+      <div className="rp-request-heading">
+        <SectionHeading id="rail-logistics-requests-title" title={`내 운송 요청 ${requests.length}건`} />
+        <button type="button" className="rp-create-request-link" onClick={onCreateRequest}>
+          <Icon name="plus" size={15} />
+          <span>운송 요청 하러가기</span>
+        </button>
+      </div>
       {totalEcoPoints > 0 && (
         <section className="rp-eco-points" aria-label="내 운송 친환경 포인트">
           <span className="rp-eco-points__icon"><Icon name="leaf" size={19} /></span>
@@ -65,7 +71,8 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onOpenReq
             aria-pressed={requestFilter === filter.id}
             onClick={() => setRequestFilter(filter.id)}
           >
-            {filter.label} <span>{requestCounts[filter.id]}</span>
+            <span className="rp-request-filter__label">{filter.label}</span>
+            <span className="rp-request-filter__count">{requestCounts[filter.id]}</span>
           </button>
         ))}
       </div>
