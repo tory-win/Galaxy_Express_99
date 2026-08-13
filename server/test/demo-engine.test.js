@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import { buildProposals, extractConditionsFromText, validateFreightRequest } from '../src/demo-engine.js'
+import { normalizeAiExtraction } from '../src/ai-client.js'
+
+test('extracts only supported values from a freight email', () => {
+  const result = extractConditionsFromText('아산 음봉 공장에서 부산신항까지 20ft 컨테이너 4개를 보냅니다. 8월 18일 출발, 8월 20일 오전 9시 도착. 위험물은 아닙니다. 도로 운송 견적은 312만원입니다.')
+  assert.equal(result.fields.containerSize, '20ft')
+  assert.equal(result.fields.containerCount, 4)
+  assert.equal(result.fields.teu, 4)
+  assert.equal(result.fields.hazardous, 'no')
+  assert.equal(result.fields.roadCost, 3_120_000)
+  assert.equal(result.missing.length, 0)
+})
+
+test('does not approve hazardous freight automatically', () => {
+  const result = validateFreightRequest({ origin: 'A', destination: 'B', containerSize: '20ft', containerCount: 1, departureDate: '2026-08-18', deadline: '2026-08-20T09:00', hazardous: 'yes' })
+  assert.equal(result.ok, false)
+  assert.equal(result.hazardous, true)
+})
+
+test('builds two ranked counterproposals from the baseline cost', () => {
+  const proposals = buildProposals({ roadCost: 3_120_000 })
+  assert.equal(proposals.length, 2)
+  assert.equal(proposals[0].savingsRate, 18)
+  assert.equal(proposals[0].cost, 2_560_000)
+  assert.equal(proposals[1].savingsRate, 22)
+  assert.ok(proposals[1].cost < proposals[0].cost)
+  assert.equal(proposals[0].breakdown[2][2], '확인 필요')
+})
+
+test('normalizes AI extraction before values reach the freight form', () => {
+  const result = normalizeAiExtraction({
+    origin: '  아산 음봉 공장  ',
+    destination: '부산신항',
+    containerSize: '20 FT',
+    containerCount: '4개',
+    departureDate: '2026-08-18 (화)',
+    deadline: '2026-08-20T09:00:00+09:00',
+    hazardous: false,
+    roadCost: '312만원',
+    weightTons: '48톤',
+    contact: '허용되지 않는 필드',
+  })
+
+  assert.deepEqual(result, {
+    origin: '아산 음봉 공장',
+    destination: '부산신항',
+    containerSize: '20ft',
+    containerCount: 4,
+    departureDate: '2026-08-18',
+    deadline: '2026-08-20T09:00',
+    hazardous: 'no',
+    roadCost: 3_120_000,
+    weightTons: 48,
+    teu: 4,
+  })
+})

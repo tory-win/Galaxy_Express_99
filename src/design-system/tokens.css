@@ -1,0 +1,52 @@
+:root {
+  /* Korail+ color system */
+  --kr-color-brand: #1b72f4;
+  --kr-color-brand-strong: #0869eb;
+  --kr-color-brand-soft: #eef5ff;
+  --kr-color-ink: #202127;
+  --kr-color-body: #3a3d45;
+  --kr-color-muted: #8b8e97;
+  --kr-color-subtle: #a6a8b0;
+  --kr-color-line: #e6e7eb;
+  --kr-color-line-strong: #c9cbd1;
+  --kr-color-canvas: #f8f7fc;
+  --kr-color-surface: #ffffff;
+  --kr-color-positive: #19b36b;
+
+  /* Type */
+  --kr-font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+  --kr-font-10: 10px;
+  --kr-font-11: 11px;
+  --kr-font-12: 12px;
+  --kr-font-13: 13px;
+  --kr-font-14: 14px;
+  --kr-font-16: 16px;
+  --kr-font-18: 18px;
+  --kr-font-20: 20px;
+  --kr-weight-regular: 400;
+  --kr-weight-medium: 500;
+  --kr-weight-semibold: 650;
+  --kr-weight-bold: 750;
+
+  /* Spacing */
+  --kr-space-1: 4px;
+  --kr-space-2: 8px;
+  --kr-space-3: 12px;
+  --kr-space-4: 16px;
+  --kr-space-5: 20px;
+  --kr-space-6: 24px;
+  --kr-space-8: 32px;
+
+  /* Shape and elevation */
+  --kr-radius-control: 8px;
+  --kr-radius-card: 11px;
+  --kr-radius-sheet: 24px;
+  --kr-radius-pill: 999px;
+  --kr-shadow-card: 0 5px 16px rgba(35, 42, 62, 0.075);
+  --kr-shadow-control: 0 3px 10px rgba(27, 114, 244, 0.09);
+
+  /* Motion */
+  --kr-motion-fast: 140ms;
+  --kr-motion-base: 220ms;
+  --kr-ease-out: cubic-bezier(0.2, 0.75, 0.25, 1);
+}

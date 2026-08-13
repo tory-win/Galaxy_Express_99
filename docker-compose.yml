@@ -1,0 +1,79 @@
+name: railpool-product
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.dev
+    command: pnpm dev --host 0.0.0.0 --port 5173
+    environment:
+      VITE_API_PROXY_TARGET: http://api:8320
+      VITE_BASE_PATH: /galaxy-express/preview/
+      PUBLIC_HOST: macmini.tailbba978.ts.net
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "${WEB_PORT:-4173}:5173"
+    volumes:
+      - .:/app
+      - railpool-node-modules:/app/node_modules
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:5173/galaxy-express/preview/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    command: node --watch server/src/index.js
+    environment:
+      PORT: 8320
+      DATABASE_URL: postgresql://railpool:railpool@db:5432/railpool
+      AI_ENABLED: "${AI_ENABLED:-false}"
+      AI_API_URL: "${AI_API_URL:-http://host.docker.internal:8318/v1/responses}"
+      AI_API_KEY: "${AI_API_KEY:-}"
+      AI_MODEL: "${AI_MODEL:-gpt-5.6-sol}"
+      AI_RATE_LIMIT_PER_MINUTE: "${AI_RATE_LIMIT_PER_MINUTE:-12}"
+      KORAIL_API_KEY: "${KORAIL_API_KEY:-}"
+    ports:
+      - "${API_PORT:-8320}:8320"
+    volumes:
+      - ./server/src:/app/server/src:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8320/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 8
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: railpool
+      POSTGRES_USER: railpool
+      POSTGRES_PASSWORD: railpool
+    ports:
+      - "${DB_PORT:-55432}:5432"
+    volumes:
+      - railpool-db-data:/var/lib/postgresql/data
+      - ./db/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U railpool -d railpool"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  railpool-db-data:
+  railpool-node-modules:
