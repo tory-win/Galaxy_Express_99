@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AXIS_OPTIONS, DEFAULT_FORM, EXAMPLE_EMAIL, formatManWon } from '../demoData.js'
+import { AXIS_OPTIONS, DEFAULT_FORM, EXAMPLE_EMAIL, FREIGHT_STATIONS, formatManWon } from '../demoData.js'
 import { ConfidenceBadge, Icon, PrimaryButton, SecondaryButton, SectionHeading } from '../components.jsx'
+import { SearchIcon } from '../../design-system/index.js'
 
 function Field({ label, required = false, hint, children, evidence }) {
   return (
@@ -20,9 +21,70 @@ function StepIndicator({ step }) {
   )
 }
 
+function StationCombobox({ id, value, onChange, placeholder }) {
+  const [query, setQuery] = useState(value)
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef(null)
+
+  useEffect(() => setQuery(value), [value])
+  useEffect(() => {
+    const close = (event) => {
+      if (!containerRef.current?.contains(event.target)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [])
+
+  const matches = FREIGHT_STATIONS.filter((station) => station.includes(query.trim())).slice(0, 12)
+  const selectStation = (station) => {
+    setQuery(station)
+    onChange(station)
+    setOpen(false)
+  }
+
+  return (
+    <div className="rp-station-combobox" ref={containerRef}>
+      <input
+        id={id}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={open}
+        aria-controls={`${id}-options`}
+        autoComplete="off"
+        value={query}
+        placeholder={placeholder}
+        onFocus={() => setOpen(true)}
+        onChange={(event) => {
+          setQuery(event.target.value)
+          onChange('')
+          setOpen(true)
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setOpen(false)
+          if (event.key === 'Enter' && open && matches.length === 1) {
+            event.preventDefault()
+            selectStation(matches[0])
+          }
+        }}
+      />
+      <SearchIcon size={16} />
+      {open && (
+        <div className="rp-station-options" id={`${id}-options`} role="listbox">
+          {matches.length ? matches.map((station) => (
+            <button type="button" role="option" aria-selected={value === station} key={station} onClick={() => selectStation(station)}>
+              <strong>{station}역</strong><small>철도 화물 취급역</small>
+            </button>
+          )) : <p>일치하는 화물역이 없습니다.</p>}
+        </div>
+      )}
+      <small className="rp-station-source">공공데이터포털 · 한국철도공사 화물역 데이터</small>
+    </div>
+  )
+}
+
 export function RequestScreen({ onAnalyze, onExtract, busy }) {
   const [step, setStep] = useState(1)
-  const [mode, setMode] = useState('email')
+  const [mode, setMode] = useState('voice')
   const [emailText, setEmailText] = useState('')
   const [form, setForm] = useState(DEFAULT_FORM)
   const [evidence, setEvidence] = useState({})
@@ -133,9 +195,9 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
         <>
           <SectionHeading eyebrow="STEP 1" title="보내실 화물을 알려주세요" />
           <div className="rp-segmented" aria-label="운송 조건 입력 방법">
-            <button type="button" aria-pressed={mode === 'direct'} className={mode === 'direct' ? 'is-active' : ''} onClick={() => setMode('direct')}>직접 입력</button>
-            <button type="button" aria-pressed={mode === 'email'} className={mode === 'email' ? 'is-active' : ''} onClick={() => setMode('email')}>이메일·문서</button>
             <button type="button" aria-pressed={mode === 'voice'} className={mode === 'voice' ? 'is-active' : ''} onClick={() => setMode('voice')}>전화·음성</button>
+            <button type="button" aria-pressed={mode === 'direct'} className={mode === 'direct' ? 'is-active' : ''} onClick={() => setMode('direct')}>항목별 입력</button>
+            <button type="button" aria-pressed={mode === 'email'} className={mode === 'email' ? 'is-active' : ''} onClick={() => setMode('email')}>이메일·문서</button>
           </div>
 
           {(mode === 'email' || mode === 'voice') && (
@@ -169,10 +231,10 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
           {mode === 'direct' && (
             <div className="rp-form-grid">
               <Field label="출발지" required evidence={evidence.origin}>
-                <input value={form.origin} onChange={(event) => update('origin', event.target.value)} placeholder="주소 또는 지역" />
+                <StationCombobox id="origin-station" value={form.origin} onChange={(value) => update('origin', value)} placeholder="출발 화물역 검색" />
               </Field>
               <Field label="도착지" required evidence={evidence.destination}>
-                <input value={form.destination} onChange={(event) => update('destination', event.target.value)} placeholder="목적지" />
+                <StationCombobox id="destination-station" value={form.destination} onChange={(value) => update('destination', value)} placeholder="도착 화물역 검색" />
               </Field>
               <div className="rp-field-row">
                 <Field label="컨테이너" required evidence={evidence.containerCount}>

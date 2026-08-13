@@ -62,8 +62,8 @@ export function SecondaryButton({ children, onClick, className = '', disabled = 
   return <Button variant="secondary" className={`rp-secondary-button ${className}`} disabled={disabled} onClick={onClick}>{children}</Button>
 }
 
-export function SectionHeading({ eyebrow, title, aside }) {
-  return <KorailSectionHeading className="rp-section-heading" eyebrow={eyebrow} title={title} aside={aside} />
+export function SectionHeading({ eyebrow, title, aside, id }) {
+  return <KorailSectionHeading className="rp-section-heading" eyebrow={eyebrow} title={title} aside={aside} id={id} />
 }
 
 export function LegalNotice() {

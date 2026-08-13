@@ -100,8 +100,8 @@ export function StatusPill({ children, tone = 'brand', className = '' }) {
   return <span className={`kr-status-pill kr-status-pill--${tone} ${className}`}>{children}</span>
 }
 
-export function SectionHeading({ eyebrow, title, aside, className = '' }) {
-  return <div className={`kr-section-heading ${className}`}><div>{eyebrow && <span>{eyebrow}</span>}<h2>{title}</h2></div>{aside}</div>
+export function SectionHeading({ eyebrow, title, aside, className = '', id }) {
+  return <div className={`kr-section-heading ${className}`}><div>{eyebrow && <span>{eyebrow}</span>}<h2 id={id}>{title}</h2></div>{aside}</div>
 }
 
 export function SubBottomNav({ items, active, onChange, className = '' }) {

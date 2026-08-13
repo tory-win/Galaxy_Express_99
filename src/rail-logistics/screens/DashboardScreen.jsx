@@ -20,8 +20,8 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
 
   return (
     <div className="rp-dashboard">
-      <section className="rp-hero-card">
-        <h1>화물 조건을 등록하고<br />함께 보낼 화물을 찾아보세요</h1>
+      <section className="rp-hero-card" aria-labelledby="rail-logistics-start-title">
+        <h1 id="rail-logistics-start-title">화물 조건을 등록하고<br />함께 보낼 화물을 찾아보세요</h1>
         <PrimaryButton onClick={onNewRequest}><Icon name="plus" size={16} /> 새 화물 추가하기</PrimaryButton>
       </section>
 
@@ -34,8 +34,8 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
         <p><Icon name={latestEvent?.type === 'pool_left' ? 'alert' : 'train'} size={15} /> {eventCopy(latestEvent)}</p>
       </section>
 
-      <SectionHeading title="내 운송 요청" />
-      <div className="rp-request-list" aria-busy={busy}>
+      <SectionHeading id="rail-logistics-requests-title" title="내 운송 요청" />
+      <section className="rp-request-list" aria-labelledby="rail-logistics-requests-title" aria-busy={busy}>
         {requests.slice(0, 4).map((request) => {
           const isPool = ['pooling', 'target_reached'].includes(request.status)
           return (
@@ -47,7 +47,7 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
           )
         })}
         {!busy && requests.length === 0 && <div className="rp-empty-state"><Icon name="train" size={24} /><strong>아직 운송 요청이 없습니다</strong><p>화물을 등록하면 함께 보낼 수 있는 조건을 바로 찾습니다.</p></div>}
-      </div>
+      </section>
 
       {latestEvent?.type === 'pool_left' && (
         <button type="button" className="rp-alert-card" onClick={onOpenNotifications}>

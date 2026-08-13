@@ -37,6 +37,7 @@ async function expectUsableLayout(page) {
 
 test('Korail entry opens the complete live Rail Logistics flow', async ({ page }) => {
   test.setTimeout(90_000)
+  let createdRequestId = ''
   await page.goto('./')
   await expect(page.getByRole('button', { name: '레일물류' })).toBeVisible()
   await capture(page, '01-korail-entry')
@@ -68,6 +69,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
 
   await page.getByRole('button', { name: '운송 방법 찾기' }).click()
   await expect(page.getByText(/현재 계획보다/).first()).toBeVisible()
+  createdRequestId = await page.evaluate(() => window.sessionStorage.getItem('railpool:requestId'))
   await expect(page.getByText(/KORAIL·ODCloud 공공데이터/)).toHaveCount(0)
   await expect(page.getByText('화차 채움 최적화', { exact: true })).toBeVisible()
   await expectUsableLayout(page)
@@ -105,6 +107,8 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await page.getByRole('button', { name: '검토 요청 보내기' }).click()
   await expect(page.getByRole('heading', { name: '검토 요청이 전달되었습니다' })).toBeVisible()
   await capture(page, '05-review-submitted')
+
+  expect(createdRequestId).toMatch(/^R-2026-/)
 })
 
 test('refresh keeps the Rail Logistics context instead of resetting to Korail home', async ({ page }) => {
