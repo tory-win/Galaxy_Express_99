@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { formatManWon } from '../demoData.js'
-import { ConfidenceBadge, Icon, LegalNotice, PrimaryButton, SecondaryButton, StatusPill } from '../components.jsx'
+import { ConfidenceBadge, Icon, LegalNotice, PrimaryButton, SecondaryButton, StatusPill, TertiaryButton } from '../components.jsx'
 
 const REJECTION_REASONS = [
   '출발일 변경 불가',
@@ -46,7 +46,7 @@ function ProposalCard({ proposal, baseline, onProceed, onCompare, onReject }) {
         </div>
       )}
 
-      <div className="rp-proposal-actions"><PrimaryButton onClick={() => onProceed(proposal)}>추천안 적용하기</PrimaryButton><SecondaryButton onClick={() => onReject(proposal)}>거절하고 다른 제안 보기</SecondaryButton><button type="button" className="rp-text-button" onClick={() => onCompare(proposal)}>원래 계획과 상세 비교</button></div>
+      <div className="rp-proposal-actions"><SecondaryButton onClick={() => onReject(proposal)}>거절하고 다른 제안 보기</SecondaryButton><PrimaryButton onClick={() => onProceed(proposal)}>추천안 적용하기</PrimaryButton><TertiaryButton onClick={() => onCompare(proposal)}>원래 계획과 상세 비교</TertiaryButton></div>
     </article>
   )
 }
