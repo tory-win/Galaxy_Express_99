@@ -31,6 +31,27 @@ const TITLES = {
 }
 
 const EMPTY_NETWORK = { totalAgents: 0, activeAgents: 0, agents: [], recentEvents: [] }
+const OWN_REQUEST_IDS_KEY = 'railpool:ownRequestIds'
+
+function readOwnRequestIds() {
+  try {
+    const ids = JSON.parse(window.localStorage.getItem(OWN_REQUEST_IDS_KEY) ?? '[]')
+    return new Set(Array.isArray(ids) ? ids.filter((id) => typeof id === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function ownRequests(requests) {
+  const ids = readOwnRequestIds()
+  return requests.filter((request) => ids.has(request.id))
+}
+
+function rememberOwnRequest(id) {
+  const ids = readOwnRequestIds()
+  ids.add(id)
+  window.localStorage.setItem(OWN_REQUEST_IDS_KEY, JSON.stringify([...ids]))
+}
 
 function readSavedView() {
   const saved = window.sessionStorage.getItem('railpool:view')
@@ -74,7 +95,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
 
   const refreshRequests = async () => {
     const result = await listFreightRequests()
-    setRequests(result.requests ?? [])
+    setRequests(ownRequests(result.requests ?? []))
   }
 
   const refreshPool = async (id = activePoolRef.current) => {
@@ -91,7 +112,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
         if (activePoolRef.current && (!event.requestId || event.requestId === activePoolRef.current)) tasks.push(getPoolSnapshot(activePoolRef.current))
         const [nextNetwork, nextRequests, nextPool] = await Promise.all(tasks)
         setNetwork(nextNetwork)
-        setRequests(nextRequests.requests ?? [])
+        setRequests(ownRequests(nextRequests.requests ?? []))
         if (nextPool?.pool) setPoolState(nextPool.pool)
         setError('')
       } catch (refreshError) {
@@ -112,7 +133,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     ])
       .then(([requestResult, networkResult, savedRequest]) => {
         if (!active) return
-        setRequests(requestResult.requests ?? [])
+        setRequests(ownRequests(requestResult.requests ?? []))
         setNetwork(networkResult)
         if (savedRequest) {
           setRequestInput(savedRequest.requestInput ?? {})
@@ -215,6 +236,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     setError('')
     try {
       const result = await createAndAnalyzeFreightRequest(form)
+      rememberOwnRequest(result.request.id)
       rememberRequest(result.request.id)
       setRequestInput(form)
       setBaseline(result.baseline)
@@ -328,7 +350,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
       <main ref={bodyRef} className={`rp-screen-body rp-screen-body--${view}`} tabIndex="-1" aria-label={`${header[0]} 화면`} aria-busy={busy}>
         {error && <div className="rp-connection-error" role="status">{error}</div>}
         {busy && view === 'request' && <div className="rp-loading-layer"><LoadingPanel /></div>}
-        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
+        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} onCreateRequest={() => navigate('request')} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
         {view === 'request' && <RequestScreen onAnalyze={analyze} onExtract={extract} busy={busy} />}
         {view === 'proposals' && baseline && proposals.length > 0 && <ProposalsScreen baseline={baseline} proposals={proposals} onProceed={proceed} onCompare={(proposal) => { setSelectedProposal(proposal); navigate('compare') }} onReject={reject} onModify={() => navigate('request')} />}
         {view === 'compare' && baseline && selectedProposal && <ComparisonScreen baseline={baseline} proposals={proposals} initialProposal={selectedProposal} onBack={() => navigate('proposals')} onProceed={proceed} />}

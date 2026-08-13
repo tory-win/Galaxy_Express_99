@@ -47,9 +47,9 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expect(page.getByText(/화물 조건을 등록하고/)).toHaveCount(0)
   await expect(page.getByRole('button', { name: '녹음 시작' })).toHaveCount(0)
   await expect(page.getByText('10/10', { exact: true })).toBeVisible({ timeout: 15_000 })
-  await expect(page.getByRole('heading', { name: /내 운송 요청 \d+건/ })).toBeVisible()
-  await expect(page.getByRole('region', { name: '내 운송 친환경 포인트' })).toContainText('예상 포인트')
-  await expect(page.getByRole('region', { name: '내 운송 친환경 포인트' })).toContainText('1kg 절감 = 1P')
+  await expect(page.getByRole('heading', { name: '내 운송 요청 0건' })).toBeVisible()
+  await expect(page.getByText('아직 운송 요청이 없습니다')).toBeVisible()
+  await expect(page.getByRole('button', { name: '운송 요청 하러가기' })).toBeVisible()
   const requestFilters = page.getByRole('group', { name: '내 운송 요청 상황별 필터' })
   await expect(requestFilters.getByRole('button')).toHaveCount(5)
   await requestFilters.getByRole('button', { name: /함께 보내기/ }).click()
@@ -170,6 +170,7 @@ test('320px layout keeps readable spacing without overflow or undersized control
     )),
   }))
   expect(filterLayout).toEqual({ hasHorizontalScroll: true, buttonsStayOnOneLine: true })
+  await expect(page.getByRole('button', { name: '운송 요청 하러가기' })).toBeVisible()
 
   const pointValue = page.locator('.rp-eco-points strong')
   await expect(pointValue).toHaveCSS('white-space', 'nowrap')
