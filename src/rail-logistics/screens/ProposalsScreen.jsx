@@ -20,6 +20,7 @@ function ProposalCard({ proposal, baseline, onProceed, onCompare, onReject }) {
       <div className="rp-proposal-card__type"><StatusPill tone={proposal.recommended ? 'blue' : 'soft'}>{proposal.type}</StatusPill><small>{proposal.trustSummary}</small></div>
       <h2>{proposal.title}</h2>
       <p className="rp-proposal-card__summary">{proposal.summary}</p>
+      {proposal.type === '날짜 조정 제안' && <p className="rp-recommend-reason">대안2는 참여 화물을 더 기다려야 해서 마감을 못 지킬 수 있습니다</p>}
       <div className="rp-change-line"><span>{proposal.before}</span><i>→</i><strong>{proposal.after}</strong></div>
 
       <div className="rp-proposal-metrics">

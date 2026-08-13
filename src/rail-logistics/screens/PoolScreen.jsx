@@ -69,7 +69,7 @@ export function PoolScreen({ proposal, pool, network, onReview, onModify, onDisr
       <section className="rp-notification-settings">
         <div className="rp-notification-settings__header">
           <span className="rp-notification-settings__icon"><Icon name="alert" size={18} /></span>
-          <div><strong>모집 알림</strong><p>참여·이탈, 목표 달성, 코레일 확인 결과를 푸시로 알려드립니다.</p></div>
+          <div><strong>모집 알림</strong><p><span>참여·이탈과 목표 달성,</span><span>코레일 확인 결과를 푸시로 알려드립니다.</span></p></div>
           <button type="button" role="switch" aria-checked={notifications} aria-label="모집 푸시 알림" onClick={() => setNotifications((value) => !value)}>
             <span>{notifications ? '켜짐' : '꺼짐'}</span><i aria-hidden="true" />
           </button>

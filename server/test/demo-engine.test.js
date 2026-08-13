@@ -39,6 +39,19 @@ test('builds two ranked proposals from the baseline and live network capacity', 
   assert.equal(proposals[0].breakdown[2][2], '확인 필요')
 })
 
+test('does not render a zero-shipper claim when no same-destination freight is connected', () => {
+  const proposals = buildProposals(
+    { roadCost: 3_120_000, teu: 4, departureDate: '2026-08-18', deadline: '2026-08-20T09:00', destination: '강경' },
+    'R-NO-MATCH',
+    { matchingAgents: 0, matchingTeu: 0, publicDataConnected: true },
+  )
+
+  assert.doesNotMatch(proposals[0].summary, /화주 0곳/)
+  assert.match(proposals[0].summary, /참여 화물이 연결되면/)
+  assert.doesNotMatch(proposals[1].after, /화주 0곳/)
+  assert.doesNotMatch(proposals[1].summary, /연결된 0TEU/)
+})
+
 test('returns one exact-match plan when capacity and the requested deadline already fit', () => {
   const proposals = buildProposals(
     { roadCost: 3_120_000, teu: 4, departureDate: '2026-08-18', deadline: '2026-08-20T15:00', origin: '서화성', destination: '부산신항' },

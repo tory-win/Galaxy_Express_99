@@ -1,7 +1,7 @@
 import express from 'express'
 import { randomUUID } from 'node:crypto'
 import { closeDatabase, databaseHealth, pool } from './db.js'
-import { buildBaseline, buildProposals, extractConditionsFromText, validateFreightRequest } from './demo-engine.js'
+import { PROPOSAL_ENGINE_VERSION, buildBaseline, buildProposals, extractConditionsFromText, validateFreightRequest } from './demo-engine.js'
 import { extractWithAi } from './ai-client.js'
 import { formatDepartureDate, formatTeu } from './presentation.js'
 import { getPublicDataStatus } from './public-data.js'
@@ -76,7 +76,7 @@ function formatRelativeTime(value) {
 
 async function ensureProposalsForRequest(freightRequest) {
   const existing = await pool.query('select payload from proposals where request_id = $1 order by rank', [freightRequest.id])
-  if (existing.rowCount && existing.rows.every((row) => row.payload?.engineVersion === 3)) return existing.rows.map((row) => row.payload)
+  if (existing.rowCount && existing.rows.every((row) => row.payload?.engineVersion === PROPOSAL_ENGINE_VERSION)) return existing.rows.map((row) => row.payload)
   const [network, sourceStatus] = await Promise.all([
     getNetworkPlanningContext(freightRequest.payload),
     getPublicDataStatus(),

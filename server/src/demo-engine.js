@@ -1,4 +1,5 @@
 const DEFAULT_MARKET_COST = 3_120_000
+export const PROPOSAL_ENGINE_VERSION = 5
 
 function formatDate(dateText, dayOffset = 0) {
   const match = String(dateText ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/)
@@ -110,12 +111,21 @@ export function buildProposals(input = {}, requestId = 'REQUEST', network = {}) 
   const networkReason = matchingAgents > 0
     ? `현재 같은 목적지 화주 ${matchingAgents}곳의 ${matchingTeu}TEU가 연결되어 있어 목표 물량을 구성할 수 있습니다.`
     : '현재 연결된 같은 목적지 화물이 없어 참여 화물을 더 기다려야 합니다.'
+  const firstSummary = matchingAgents > 0
+    ? `같은 목적지 화주 ${matchingAgents}곳과 물량을 맞추면 전체 비용이 예상 기준 약 18% 낮아집니다.`
+    : '같은 목적지 참여 화물이 연결되면 전체 비용이 예상 기준 약 18% 낮아질 수 있습니다.'
+  const secondAfter = matchingAgents > 0
+    ? `같은 목적지 화주 ${matchingAgents}곳과 목표 물량 구성`
+    : '같은 목적지 참여 화물과 목표 물량 구성'
+  const secondSummary = matchingTeu > 0
+    ? `연결된 ${matchingTeu}TEU 중 같은 회차 물량을 채우면 1TEU당 비용이 예상 기준 약 22% 낮아집니다.`
+    : '같은 목적지 참여 화물을 더 모아 회차 물량을 채우면 1TEU당 비용이 낮아질 수 있습니다.'
   const scheduleConfidence = network.publicDataConnected ? '철도 시간표 확인 완료' : '철도 시간표 확인 필요'
   const exactDeadline = deadlineStatus(input.departureDate, input.deadline, 13)
   if (network.publicDataConnected && potentialTeu >= targetTeu && exactDeadline.deadlineMet) {
     return [{
       id: `${requestId}-P0`,
-      engineVersion: 3,
+      engineVersion: PROPOSAL_ENGINE_VERSION,
       type: '조건 일치 운송안',
       title: '입력한 조건 그대로 운송할 수 있습니다',
       summary: `출발일과 도착 마감을 바꾸지 않고 같은 목적지 화주 ${matchingAgents}곳과 함께 보낼 수 있습니다.`,
@@ -152,10 +162,10 @@ export function buildProposals(input = {}, requestId = 'REQUEST', network = {}) 
   return [
     {
       id: `${requestId}-P1`,
-      engineVersion: 3,
+      engineVersion: PROPOSAL_ENGINE_VERSION,
       type: '날짜 조정 제안',
       title: `출발을 ${firstDeparture}로 하루 옮겨보세요`,
-      summary: `같은 목적지 화주 ${matchingAgents}곳과 물량을 맞추면 전체 비용이 예상 기준 약 18% 낮아집니다.`,
+      summary: firstSummary,
       recommended: true,
       before: `${formatDate(input.departureDate)} 출발 · 도로 운송`,
       after: `${firstDeparture} 출발 · 철도 함께 보내기`,
@@ -186,13 +196,13 @@ export function buildProposals(input = {}, requestId = 'REQUEST', network = {}) 
     },
     {
       id: `${requestId}-P2`,
-      engineVersion: 3,
+      engineVersion: PROPOSAL_ENGINE_VERSION,
       type: '화차 채움 최적화',
       title: `같은 회차 화물 ${neededTeu}TEU를 모아보세요`,
-      summary: `연결된 ${matchingTeu}TEU 중 같은 회차 물량을 채우면 1TEU당 비용이 예상 기준 약 22% 낮아집니다.`,
+      summary: secondSummary,
       recommended: false,
       before: '단독 배정 · 화차 단위 손실',
-      after: `같은 목적지 화주 ${matchingAgents}곳과 목표 물량 구성`,
+      after: secondAfter,
       cost: secondCost,
       savings: baselineCost - secondCost,
       savingsRate: 22,

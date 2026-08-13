@@ -87,6 +87,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   createdRequestId = await page.evaluate(() => window.sessionStorage.getItem('railpool:requestId'))
   await expect(page.getByText(/KORAIL·ODCloud 공공데이터/)).toHaveCount(0)
   await expect(page.getByText('화차 채움 최적화', { exact: true })).toBeVisible()
+  await expect(page.getByText('대안2는 참여 화물을 더 기다려야 해서 마감을 못 지킬 수 있습니다', { exact: true })).toBeVisible()
   await expectUsableLayout(page)
   await capture(page, '03-transport-proposals')
 
@@ -169,6 +170,10 @@ test('320px layout keeps readable spacing without overflow or undersized control
     )),
   }))
   expect(filterLayout).toEqual({ hasHorizontalScroll: true, buttonsStayOnOneLine: true })
+
+  const pointValue = page.locator('.rp-eco-points strong')
+  await expect(pointValue).toHaveCSS('white-space', 'nowrap')
+  expect(await pointValue.evaluate((element) => element.getClientRects().length)).toBe(1)
 
   const gap = await page.evaluate(() => {
     const network = document.querySelector('.rp-network-card').getBoundingClientRect()
