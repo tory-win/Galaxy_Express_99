@@ -11,6 +11,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "check": "pnpm check:design && vite build && pnpm --dir server test && pnpm --dir agents test",
     "check:design": "node scripts/check-design-system.mjs",
+    "record:demo": "node scripts/record-demo-video.mjs",
+    "postprocess:demo": "node scripts/postprocess-demo-video.mjs",
     "test": "pnpm --dir server test",
     "test:e2e": "playwright test"
   },

@@ -1,0 +1,14 @@
+{
+  "outputPath": "out/demo_3min.mp4",
+  "baseVideo": "out/demo_3min_base.mp4",
+  "sourceCommit": "80e099d09c01c88991079e487d9f1d8fb7f68bcc",
+  "duration": 180,
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "manualPanelRecorded": false,
+  "mockCleanupVerified": true,
+  "voice": "Yuna",
+  "voiceRate": 185,
+  "cues": 19
+}

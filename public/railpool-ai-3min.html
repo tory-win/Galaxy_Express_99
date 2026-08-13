@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="RAILPOOL AI 3분 매뉴얼 영상" />
+    <title>RAILPOOL AI · 3분 매뉴얼 영상</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+        background: #eef1f6;
+        color: #101828;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 50% -20%, rgba(43, 117, 240, 0.18), transparent 42%),
+          #eef1f6;
+      }
+
+      main {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 44px 0 56px;
+      }
+
+      header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 22px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: #2674ea;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 44px);
+        line-height: 1.12;
+        letter-spacing: -0.04em;
+      }
+
+      .summary {
+        margin: 10px 0 0;
+        color: #667085;
+        font-size: 16px;
+      }
+
+      .badge {
+        flex: none;
+        padding: 9px 13px;
+        border: 1px solid #d0d5dd;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #344054;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .player {
+        overflow: hidden;
+        border: 1px solid rgba(16, 24, 40, 0.08);
+        border-radius: 22px;
+        background: #111827;
+        box-shadow: 0 24px 70px rgba(16, 24, 40, 0.18);
+      }
+
+      video {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: #e9edf3;
+      }
+
+      .info {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 20px;
+        padding: 18px 20px;
+        background: white;
+      }
+
+      .info p {
+        margin: 0;
+        color: #475467;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 9px;
+      }
+
+      a {
+        display: inline-flex;
+        min-height: 40px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 15px;
+        border: 1px solid #d0d5dd;
+        border-radius: 11px;
+        color: #344054;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      a.primary {
+        border-color: #2674ea;
+        background: #2674ea;
+        color: white;
+      }
+
+      a:hover { filter: brightness(0.97); }
+      a:focus-visible, video:focus-visible { outline: 3px solid #84adff; outline-offset: 3px; }
+
+      @media (max-width: 720px) {
+        main { width: min(100% - 20px, 1180px); padding-top: 26px; }
+        header { align-items: flex-start; flex-direction: column; gap: 14px; }
+        .player { border-radius: 15px; }
+        .info { grid-template-columns: 1fr; }
+        .links { justify-content: stretch; }
+        .links a { flex: 1; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">RAILPOOL AI</p>
+          <h1>3분 매뉴얼 영상</h1>
+          <p class="summary">앱 화면 단독 · 화면 밖 한국어 자막 · 한국어 음성</p>
+        </div>
+        <span class="badge">가상 데이터 기반 시연</span>
+      </header>
+
+      <section class="player" aria-label="RAILPOOL AI 매뉴얼 영상 플레이어">
+        <video
+          controls
+          playsinline
+          preload="metadata"
+          poster="./railpool-ai-3min-poster.png"
+          aria-label="RAILPOOL AI 3분 매뉴얼 영상"
+        >
+          <source src="./railpool-ai-3min.mp4" type="video/mp4" />
+          이 브라우저는 MP4 영상 재생을 지원하지 않습니다.
+        </video>
+        <div class="info">
+          <p>3:00 · 1920×1080 · H.264 · 한국어 음성 포함<br />자막은 앱 화면을 가리지 않도록 휴대폰 프레임 아래에 배치했습니다.</p>
+          <div class="links">
+            <a href="./railpool-ai-3min.mp4" download>MP4 다운로드</a>
+            <a class="primary" href="./#rail-logistics">앱 열기</a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
