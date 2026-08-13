@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { Icon, PrimaryButton, SectionHeading, StatusPill } from '../components.jsx'
 
 const STATUS_TONE = {
@@ -6,6 +7,14 @@ const STATUS_TONE = {
   target_reached: 'green',
   review_submitted: 'green',
 }
+
+const REQUEST_FILTERS = [
+  { id: 'all', label: '전체', statuses: null },
+  { id: 'checking', label: '확인 중', statuses: ['draft', 'analyzing', 'matching'] },
+  { id: 'proposal', label: '제안 도착', statuses: ['proposal_ready'] },
+  { id: 'pool', label: '함께 보내기', statuses: ['pooling', 'target_reached'] },
+  { id: 'done', label: '검토·종료', statuses: ['review_submitted', 'closed'] },
+]
 
 function eventCopy(event) {
   if (!event) return '새 화물이 들어오면 바로 함께 보낼 수 있는 조합을 찾습니다.'
@@ -17,6 +26,15 @@ function eventCopy(event) {
 
 export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequest, onOpenRequest, onOpenPool, onOpenNotifications }) {
   const latestEvent = network.recentEvents?.[0]
+  const [requestFilter, setRequestFilter] = useState('all')
+  const requestCounts = useMemo(() => Object.fromEntries(REQUEST_FILTERS.map((filter) => [
+    filter.id,
+    filter.statuses ? requests.filter((request) => filter.statuses.includes(request.status)).length : requests.length,
+  ])), [requests])
+  const activeFilter = REQUEST_FILTERS.find((filter) => filter.id === requestFilter) ?? REQUEST_FILTERS[0]
+  const visibleRequests = activeFilter.statuses
+    ? requests.filter((request) => activeFilter.statuses.includes(request.status))
+    : requests
 
   return (
     <div className="rp-dashboard">
@@ -34,9 +52,22 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
         <p><Icon name={latestEvent?.type === 'pool_left' ? 'alert' : 'train'} size={15} /> {eventCopy(latestEvent)}</p>
       </section>
 
-      <SectionHeading id="rail-logistics-requests-title" title="내 운송 요청" />
+      <SectionHeading id="rail-logistics-requests-title" title={`내 운송 요청 ${requests.length}건`} />
+      <div className="rp-request-filters" role="group" aria-label="내 운송 요청 상황별 필터">
+        {REQUEST_FILTERS.map((filter) => (
+          <button
+            type="button"
+            key={filter.id}
+            className={requestFilter === filter.id ? 'is-active' : ''}
+            aria-pressed={requestFilter === filter.id}
+            onClick={() => setRequestFilter(filter.id)}
+          >
+            {filter.label} <span>{requestCounts[filter.id]}</span>
+          </button>
+        ))}
+      </div>
       <section className="rp-request-list" aria-labelledby="rail-logistics-requests-title" aria-busy={busy}>
-        {requests.slice(0, 4).map((request) => {
+        {visibleRequests.map((request) => {
           const isPool = ['pooling', 'target_reached'].includes(request.status)
           return (
             <button type="button" className="rp-request-card" key={request.id} onClick={() => isPool ? onOpenPool(request) : onOpenRequest(request)}>
@@ -47,6 +78,7 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
           )
         })}
         {!busy && requests.length === 0 && <div className="rp-empty-state"><Icon name="train" size={24} /><strong>아직 운송 요청이 없습니다</strong><p>화물을 등록하면 함께 보낼 수 있는 조건을 바로 찾습니다.</p></div>}
+        {!busy && requests.length > 0 && visibleRequests.length === 0 && <div className="rp-empty-state"><Icon name="train" size={24} /><strong>{activeFilter.label} 요청이 없습니다</strong><p>다른 상황을 선택하면 해당 운송 요청을 확인할 수 있습니다.</p></div>}
       </section>
 
       {latestEvent?.type === 'pool_left' && (
