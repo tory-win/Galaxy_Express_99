@@ -30,7 +30,18 @@ for (const [label, pattern] of cssRules) {
 
 const visibleSources = [{ name: 'RailLogisticsApp.jsx', source: railApp }, { name: 'components.jsx', source: railComponents }, ...screenSources]
 for (const { name, source } of visibleSources) {
-  if (/RAILPOOL AI|Icon name="spark"|시연용|가상 물량|AI가|AI로|AI에게|AI 해석/.test(source)) violations.push(`${name}: user-facing AI/demo decoration`)
+  if (/시연용|가상 물량/.test(source)) violations.push(`${name}: user-facing demo decoration`)
+}
+
+const aiDisclosureRules = [
+  ['DashboardScreen.jsx', 'RAILPOOL AI · 실시간 매칭'],
+  ['RequestScreen.jsx', 'RAILPOOL AI가 하는 일'],
+  ['ProposalsScreen.jsx', 'RAILPOOL AI 추천 결과'],
+  ['components.jsx', 'RAILPOOL AI 작업 중'],
+]
+for (const [name, phrase] of aiDisclosureRules) {
+  const source = visibleSources.find((item) => item.name === name)?.source ?? ''
+  if (!source.includes(phrase)) violations.push(`${name}: AI role disclosure missing`)
 }
 
 if (!railComponents.includes("from '../design-system/index.js'")) {

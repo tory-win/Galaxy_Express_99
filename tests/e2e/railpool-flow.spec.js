@@ -44,6 +44,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
 
   await page.getByRole('button', { name: '레일물류' }).click()
   await expect(page.getByRole('region', { name: '함께 보내기 네트워크 현황' })).toBeVisible()
+  await expect(page.getByText('RAILPOOL AI · 실시간 매칭')).toBeVisible()
   await expect(page.getByText(/화물 조건을 등록하고/)).toHaveCount(0)
   await expect(page.getByRole('button', { name: '녹음 시작' })).toHaveCount(0)
   await expect(page.getByText('10/10', { exact: true })).toBeVisible({ timeout: 15_000 })
@@ -63,6 +64,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await capture(page, '02-railpool-dashboard')
 
   await createRequestLink.click()
+  await expect(page.getByRole('region', { name: 'RAILPOOL AI가 하는 일' })).toBeVisible()
   await expect(page.locator('.rp-form-actions')).toHaveCount(0)
   await page.getByRole('button', { name: '이메일·문서' }).click()
   await page.getByRole('textbox', { name: '메일 또는 문서 내용' }).fill(`제목: 부산신항 산업용 부품 출하 요청
@@ -70,8 +72,8 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
 아산 음봉 공장에서 부산신항까지 20ft 컨테이너 4개를 보내려고 합니다.
 8월 18일 출발을 희망하고, 8월 20일 오전 9시까지 도착해야 합니다.
 위험물은 아니며 현재 도로 운송 견적은 312만원입니다.`)
-  await page.getByRole('button', { name: '조건 자동 입력' }).click()
-  await expect(page.getByText('6개 필수 항목을 인식했습니다')).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('button', { name: 'AI로 조건 자동 입력' }).click()
+  await expect(page.getByText('AI가 6개 필수 항목을 정리했습니다')).toBeVisible({ timeout: 15_000 })
 
   await page.getByRole('button', { name: '인식 결과 확인·수정' }).click()
   await expect.poll(() => page.locator('.rp-screen-body').evaluate((element) => element.scrollTop)).toBe(0)
@@ -83,8 +85,9 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await page.getByRole('button', { name: '다음' }).click()
   await expect(page.getByRole('heading', { name: '이 조건으로 방법을 찾을게요' })).toBeVisible()
 
-  await page.getByRole('button', { name: '운송 방법 찾기' }).click()
+  await page.getByRole('button', { name: 'AI로 운송 방법 찾기' }).click()
   await expect(page.getByText(/현재 계획보다/).first()).toBeVisible()
+  await expect(page.getByText('RAILPOOL AI 추천 결과')).toBeVisible()
   createdRequestId = await page.evaluate(() => window.sessionStorage.getItem('railpool:requestId'))
   await expect(page.getByText(/KORAIL·ODCloud 공공데이터/)).toHaveCount(0)
   await expect(page.getByText('화차 채움 최적화', { exact: true })).toBeVisible()
@@ -141,6 +144,7 @@ test('request method order and searchable public-data stations are keyboard usab
   await page.goto('./#rail-logistics')
   await page.locator('.rp-bottom-nav').getByRole('button', { name: 'AI에게 운송 요청하기' }).click()
   await expect(page.getByRole('heading', { name: 'AI에게 운송 요청하기' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'RAILPOOL AI가 하는 일' })).toBeVisible()
 
   const methods = page.locator('.rp-segmented button')
   await expect(methods).toHaveCount(3)

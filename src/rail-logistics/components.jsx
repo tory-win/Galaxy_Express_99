@@ -79,12 +79,14 @@ export function LegalNotice() {
   )
 }
 
-export function LoadingPanel({ label = '운송 방법을 찾고 있어요' }) {
+export function LoadingPanel({ label = 'AI가 운송 조건을 분석하고 있어요' }) {
   return (
     <div className="rp-loading" role="status">
-      <span className="rp-loading__mark"><Icon name="train" size={28} /></span>
+      <span className="rp-loading__mark"><Icon name="spark" size={28} /></span>
+      <small className="rp-loading__eyebrow">RAILPOOL AI 작업 중</small>
       <h2>{label}</h2>
-      <p>입력한 조건과 현재 운송 가능 구간을 확인하고 있습니다.</p>
+      <ul><li><Icon name="check" size={15} />입력 조건 구조화</li><li><Icon name="train" size={15} />운행·화물역 데이터 비교</li><li><Icon name="spark" size={15} />함께 보낼 화물 조합 탐색</li></ul>
+      <p>AI가 제안을 만들고 실제 운임·적재 가능 여부는 코레일 담당자가 확인합니다.</p>
     </div>
   )
 }

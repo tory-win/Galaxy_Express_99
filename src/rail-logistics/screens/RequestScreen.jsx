@@ -227,6 +227,13 @@ export function RequestScreen({ onAnalyze, onExtract, busy, demoMode = false, in
 
   return (
     <div className="rp-request-screen">
+      {step === 1 && (
+        <section className="rp-ai-workflow" aria-label="RAILPOOL AI가 하는 일">
+          <div className="rp-ai-workflow__heading"><span><Icon name="spark" size={20} /></span><div><small>RAILPOOL AI가 하는 일</small><strong>말씀하신 조건을 실행 가능한 운송안으로 바꿉니다</strong></div></div>
+          <ol><li><b>1</b><span>조건 읽기</span></li><li><b>2</b><span>빈칸 확인</span></li><li><b>3</b><span>운송 조합 찾기</span></li></ol>
+          <p>AI가 조건을 정리하고 공공데이터와 비교합니다. 실제 운임과 적재 가능 여부는 코레일 담당자가 최종 확인합니다.</p>
+        </section>
+      )}
       <StepIndicator step={step} />
 
       {step === 1 && (
@@ -253,10 +260,10 @@ export function RequestScreen({ onAnalyze, onExtract, busy, demoMode = false, in
                 </>
               )}
               <textarea aria-label={mode === 'voice' ? '음성 인식 텍스트' : '메일 또는 문서 내용'} value={emailText} onChange={(event) => setEmailText(event.target.value)} placeholder={mode === 'voice' ? '예: 아산에서 부산신항까지 20피트 4개, 8월 18일 출발이요…' : '출발지, 도착지, 수량, 날짜가 포함된 메일 내용을 붙여넣어 주세요.'} />
-              <PrimaryButton disabled={busy || listening || !emailText.trim()} onClick={handleExtract}>{busy ? '조건을 읽는 중…' : mode === 'voice' ? '받아쓴 내용으로 조건 입력' : '조건 자동 입력'}</PrimaryButton>
+              <PrimaryButton disabled={busy || listening || !emailText.trim()} onClick={handleExtract}>{busy ? 'AI가 조건 읽는 중…' : mode === 'voice' ? 'AI로 받아쓴 조건 정리' : 'AI로 조건 자동 입력'}</PrimaryButton>
               {extracted && (
                 <div className="rp-extracted-summary">
-                  <strong><Icon name="check" size={14} /> 6개 필수 항목을 인식했습니다</strong>
+                  <strong><Icon name="spark" size={14} /> AI가 6개 필수 항목을 정리했습니다</strong>
                   <p>{form.origin} → {form.destination} · {form.containerSize} × {form.containerCount}</p>
                   <div><ConfidenceBadge kind="확인 완료" compact /><span>원문 근거를 함께 저장했습니다</span></div>
                   <SecondaryButton onClick={() => setMode('direct')}>인식 결과 확인·수정</SecondaryButton>
@@ -352,8 +359,8 @@ export function RequestScreen({ onAnalyze, onExtract, busy, demoMode = false, in
             <div>{AXIS_OPTIONS.map((axis) => <span key={axis.id}>{axis.label} {form.axes[axis.id]}</span>)}</div>
           </section>
           <div className="rp-analysis-explainer">
-            <span><Icon name="check" size={20} /></span>
-            <div><strong>입력한 조건 안에서 비교합니다</strong><p>현재 계획과 날짜·화물역·물량 조합을 비교해 차이가 큰 운송 방법만 보여드립니다.</p></div>
+            <span><Icon name="spark" size={20} /></span>
+            <div><strong>RAILPOOL AI가 비교하는 항목</strong><p>현재 계획과 날짜·화물역·물량 조합을 비교해 차이가 큰 운송 방법만 보여드립니다.</p></div>
           </div>
         </>
       )}
@@ -364,7 +371,7 @@ export function RequestScreen({ onAnalyze, onExtract, busy, demoMode = false, in
         <div className="rp-form-actions">
           {step > 1 && <SecondaryButton onClick={() => setStep((current) => current - 1)}>이전</SecondaryButton>}
           {step < 3 && <PrimaryButton onClick={next}>다음</PrimaryButton>}
-          {step === 3 && <PrimaryButton onClick={() => onAnalyze(form)} disabled={busy || form.hazardous === 'yes'}>{busy ? '운송 방법 찾는 중…' : '운송 방법 찾기'}</PrimaryButton>}
+          {step === 3 && <PrimaryButton onClick={() => onAnalyze(form)} disabled={busy || form.hazardous === 'yes'}>{busy ? 'AI가 운송 방법 찾는 중…' : 'AI로 운송 방법 찾기'}</PrimaryButton>}
         </div>
       )}
     </div>

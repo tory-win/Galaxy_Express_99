@@ -41,10 +41,11 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onCreateR
     <div className="rp-dashboard">
       <section className="rp-network-card" aria-label="함께 보내기 네트워크 현황">
         <div className="rp-network-card__top">
-          <span className={`rp-network-pulse ${liveStatus === 'live' ? 'is-live' : ''}`} />
-          <div><strong>화주 {network.activeAgents}곳이 화물을 찾는 중</strong><small>같은 구간과 날짜가 맞으면 자동으로 함께 보내기에 연결됩니다.</small></div>
+          <span className={`rp-ai-network-mark ${liveStatus === 'live' ? 'is-live' : ''}`}><Icon name="spark" size={18} /><i /></span>
+          <div><small className="rp-ai-label">RAILPOOL AI · 실시간 매칭</small><strong>화주 {network.activeAgents}곳의 운송 조건을 비교 중</strong><small>같은 구간·날짜·물량을 찾아 함께 보내기 조합을 자동으로 만듭니다.</small></div>
           <StatusPill tone={network.activeAgents === network.totalAgents && network.totalAgents > 0 ? 'green' : 'orange'}>{network.activeAgents}/{network.totalAgents}</StatusPill>
         </div>
+        <ul className="rp-ai-task-list" aria-label="AI 처리 단계"><li><Icon name="check" size={14} />조건 읽기</li><li><Icon name="train" size={14} />노선 비교</li><li><Icon name="spark" size={14} />화물 매칭</li></ul>
         <p><Icon name={latestEvent?.type === 'pool_left' ? 'alert' : 'train'} size={15} /> {eventCopy(latestEvent)}</p>
       </section>
 

@@ -16,7 +16,7 @@ function ProposalCard({ proposal, baseline, onProceed, onCompare, onReject }) {
   const [detailsOpen, setDetailsOpen] = useState(false)
   return (
     <article className={`rp-proposal-card ${proposal.recommended ? 'is-recommended' : ''}`}>
-      {proposal.recommended && <span className="rp-recommend-ribbon"><Icon name="check" size={12} /> 추천</span>}
+      {proposal.recommended && <span className="rp-recommend-ribbon"><Icon name="spark" size={12} /> AI 추천</span>}
       <div className="rp-proposal-card__type"><StatusPill tone={proposal.recommended ? 'blue' : 'soft'}>{proposal.type}</StatusPill><small>{proposal.trustSummary}</small></div>
       <h2>{proposal.title}</h2>
       <p className="rp-proposal-card__summary">{proposal.summary}</p>
@@ -31,7 +31,7 @@ function ProposalCard({ proposal, baseline, onProceed, onCompare, onReject }) {
       <div className="rp-carbon-row"><Icon name="leaf" size={16} /><div><strong>탄소 약 {proposal.carbonSavings}톤 CO₂ 절감 · −{proposal.carbonRate}%</strong><small><ConfidenceBadge kind="예상값" compact /> 전환교통 지원사업 대상 요건에 해당할 수 있음 · 사전 협약 필요</small></div></div>
 
       <dl className="rp-proposal-facts">
-        <div><dt>이 제안이 유리한 이유</dt><dd>{proposal.reason}</dd></div>
+        <div><dt>AI가 이 제안을 고른 이유</dt><dd>{proposal.reason}</dd></div>
         <div><dt>얻는 것</dt><dd className="is-gain">{proposal.gains}</dd></div>
         <div><dt>{proposal.exactMatch ? '조건 변경' : '감수할 것'}</dt><dd className={proposal.exactMatch ? 'is-gain' : 'is-loss'}>{proposal.tradeoff}</dd></div>
         <div><dt>주의</dt><dd>{proposal.caution}</dd></div>
@@ -114,8 +114,8 @@ export function ProposalsScreen({ baseline, proposals, onProceed, onCompare, onR
   return (
     <div className="rp-proposals-screen">
       <section className="rp-proposal-opening">
-        <span><Icon name="train" size={18} /></span>
-        <div><small>{leadProposal.exactMatch ? '조건 일치 결과' : '운송 제안'}</small><h1>{leadProposal.exactMatch ? <>입력한 조건 그대로<br />운송할 수 있습니다.</> : <>현재 계획보다<br />{formatManWon(leadProposal.savings)} 낮은 방법이 있습니다.</>}</h1><p>{leadProposal.exactMatch ? '별도 대안 없이 이 운송안의 비용과 세부 조건만 확인해 주세요.' : `${leadProposal.tradeoff}. 아래에서 비용과 일정 차이를 확인해 주세요.`}</p></div>
+        <span><Icon name="spark" size={18} /></span>
+        <div><small>{leadProposal.exactMatch ? 'RAILPOOL AI 조건 일치 결과' : 'RAILPOOL AI 추천 결과'}</small><h1>{leadProposal.exactMatch ? <>입력한 조건 그대로<br />운송할 수 있습니다.</> : <>현재 계획보다<br />{formatManWon(leadProposal.savings)} 낮은 방법이 있습니다.</>}</h1><p>{leadProposal.exactMatch ? '별도 대안 없이 이 운송안의 비용과 세부 조건만 확인해 주세요.' : `${leadProposal.tradeoff}. 아래에서 비용과 일정 차이를 확인해 주세요.`}</p></div>
       </section>
 
       <section className="rp-baseline-card">
@@ -147,7 +147,7 @@ export function ProposalsScreen({ baseline, proposals, onProceed, onCompare, onR
             <button type="button" className="rp-modal-close" aria-label="거절 사유 선택 닫기" onClick={() => setRejecting(null)}>×</button>
             <span className="rp-modal__step">다음 제안을 더 정확하게 찾을게요</span>
             <h2 id="reject-title">어떤 조건을 바꾸기 힘드신가요?</h2>
-            <p id="reject-description">선택한 내용을 반영해 다른 조합을 다시 계산합니다.</p>
+            <p id="reject-description">선택한 내용을 반영해 AI가 다른 조합을 다시 계산합니다.</p>
             <div className="rp-reason-grid">{REJECTION_REASONS.map((reason) => <button type="button" key={reason} onClick={() => chooseReason(reason)}>{reason}</button>)}</div>
           </section>
         </div>
