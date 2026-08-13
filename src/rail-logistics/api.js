@@ -1,4 +1,26 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || './api/v1'
+const OWNED_REQUEST_IDS_KEY = 'railpool:ownedRequestIds'
+const runtimeOwnedRequestIds = new Set()
+
+function readOwnedRequestIds() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(OWNED_REQUEST_IDS_KEY) ?? '[]')
+    const savedIds = Array.isArray(saved) ? saved.filter((id) => typeof id === 'string') : []
+    return [...new Set([...savedIds, ...runtimeOwnedRequestIds])]
+  } catch {
+    return [...runtimeOwnedRequestIds]
+  }
+}
+
+function rememberOwnedRequestId(requestId) {
+  runtimeOwnedRequestIds.add(requestId)
+  try {
+    const requestIds = [...new Set([requestId, ...readOwnedRequestIds()])]
+    window.localStorage.setItem(OWNED_REQUEST_IDS_KEY, JSON.stringify(requestIds))
+  } catch {
+    // 저장소가 차단된 환경에서도 요청 생성과 분석은 계속 진행합니다.
+  }
+}
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -10,7 +32,11 @@ async function request(path, options = {}) {
   return payload
 }
 
-export const listFreightRequests = () => request('/requests')
+export async function listFreightRequests() {
+  const result = await request('/requests')
+  const ownedRequestIds = new Set(readOwnedRequestIds())
+  return { ...result, requests: (result.requests ?? []).filter((item) => ownedRequestIds.has(item.id)) }
+}
 export const getFreightRequest = (requestId) => request(`/requests/${requestId}`)
 export const getRailpoolNetwork = () => request('/network')
 export const getPoolSnapshot = (requestId) => request(`/pools/${requestId}`)
@@ -35,6 +61,7 @@ export function extractFreightConditions(text) {
 
 export async function createAndAnalyzeFreightRequest(form) {
   const created = await request('/requests', { method: 'POST', body: JSON.stringify(form) })
+  rememberOwnedRequestId(created.request.id)
   return request(`/requests/${created.request.id}/analyze`, { method: 'POST' })
 }
 

@@ -328,7 +328,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
       <main ref={bodyRef} className={`rp-screen-body rp-screen-body--${view}`} tabIndex="-1" aria-label={`${header[0]} 화면`} aria-busy={busy}>
         {error && <div className="rp-connection-error" role="status">{error}</div>}
         {busy && view === 'request' && <div className="rp-loading-layer"><LoadingPanel /></div>}
-        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
+        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} onCreateRequest={() => navigate('request')} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
         {view === 'request' && <RequestScreen onAnalyze={analyze} onExtract={extract} busy={busy} />}
         {view === 'proposals' && baseline && proposals.length > 0 && <ProposalsScreen baseline={baseline} proposals={proposals} onProceed={proceed} onCompare={(proposal) => { setSelectedProposal(proposal); navigate('compare') }} onReject={reject} onModify={() => navigate('request')} />}
         {view === 'compare' && baseline && selectedProposal && <ComparisonScreen baseline={baseline} proposals={proposals} initialProposal={selectedProposal} onBack={() => navigate('proposals')} onProceed={proceed} />}
