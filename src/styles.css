@@ -1333,8 +1333,9 @@ img {
 }
 
 .kr-toast--rail-logistics {
+  top: 154px;
   right: 24px;
-  bottom: 126px;
+  bottom: auto;
   left: 24px;
   padding: 9px 11px;
   border-radius: 10px;
@@ -1342,10 +1343,15 @@ img {
   font-size: 10px;
   line-height: 1.4;
   pointer-events: none;
+  animation-name: kr-toast-in-top;
 }
 
 @keyframes kr-toast-in {
   from { opacity: 0; transform: translateY(8px); }
+}
+
+@keyframes kr-toast-in-top {
+  from { opacity: 0; transform: translateY(-8px); }
 }
 
 .kr-sheet-layer {
