@@ -46,6 +46,7 @@
 }
 .rp-screen-body::-webkit-scrollbar { display: none; }
 .rp-screen-body:focus { outline: none; }
+.rp-bottom-nav.is-recording button:nth-child(2) { color: var(--kr-color-danger); }
 
 .rp-sr-only {
   position: absolute;

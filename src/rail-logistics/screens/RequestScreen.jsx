@@ -96,10 +96,10 @@ function StationCombobox({ id, value, onChange, placeholder }) {
   )
 }
 
-export function RequestScreen({ onAnalyze, onExtract, busy }) {
+export function RequestScreen({ onAnalyze, onExtract, busy, initialVoiceText = '', onInitialVoiceTextConsumed }) {
   const [step, setStep] = useState(1)
   const [mode, setMode] = useState('voice')
-  const [emailText, setEmailText] = useState('')
+  const [emailText, setEmailText] = useState(initialVoiceText)
   const [form, setForm] = useState(DEFAULT_FORM)
   const [evidence, setEvidence] = useState({})
   const [extracted, setExtracted] = useState(false)
@@ -107,6 +107,13 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
   const [listening, setListening] = useState(false)
   const [speechSupported] = useState(() => Boolean(window.SpeechRecognition || window.webkitSpeechRecognition))
   const recognitionRef = useRef(null)
+
+  useEffect(() => {
+    if (!initialVoiceText) return
+    setMode('voice')
+    setEmailText(initialVoiceText)
+    onInitialVoiceTextConsumed?.()
+  }, [initialVoiceText, onInitialVoiceTextConsumed])
 
   useEffect(() => () => recognitionRef.current?.stop(), [])
 
