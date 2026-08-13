@@ -160,6 +160,16 @@ test('320px layout keeps readable spacing without overflow or undersized control
   await expect(page.getByRole('region', { name: '함께 보내기 네트워크 현황' })).toBeVisible()
   await expectUsableLayout(page)
 
+  const filters = page.getByRole('group', { name: '내 운송 요청 상황별 필터' })
+  await expect(filters).toHaveCSS('overflow-x', 'auto')
+  const filterLayout = await filters.evaluate((element) => ({
+    hasHorizontalScroll: element.scrollWidth > element.clientWidth,
+    buttonsStayOnOneLine: [...element.querySelectorAll('button')].every((button) => (
+      getComputedStyle(button).whiteSpace === 'nowrap' && button.getBoundingClientRect().height <= 40
+    )),
+  }))
+  expect(filterLayout).toEqual({ hasHorizontalScroll: true, buttonsStayOnOneLine: true })
+
   const gap = await page.evaluate(() => {
     const network = document.querySelector('.rp-network-card').getBoundingClientRect()
     const heading = document.querySelector('.rp-dashboard .rp-section-heading').getBoundingClientRect()
