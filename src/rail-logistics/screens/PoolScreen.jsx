@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { POOL_PARTICIPANTS, formatManWon } from '../demoData.js'
 import { ConfidenceBadge, Icon, LegalNotice, PrimaryButton, SecondaryButton, StatusPill } from '../components.jsx'
 
-export function PoolScreen({ proposal, currentTeu, targetTeu, onFill, onReview, onDisruption, busy }) {
+export function PoolScreen({ proposal, currentTeu, targetTeu, onFill, onReview, onModify, onDisruption, busy }) {
   const [flash, setFlash] = useState(false)
   const filled = currentTeu >= targetTeu
   const percent = Math.min(100, Math.round((currentTeu / targetTeu) * 100))
@@ -13,8 +13,15 @@ export function PoolScreen({ proposal, currentTeu, targetTeu, onFill, onReview, 
   useEffect(() => {
     if (!filled) return undefined
     setFlash(true)
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      document.querySelector('.rp-screen-body')?.scrollTo({ top: 0, behavior: 'auto' })
+    })
     const timer = window.setTimeout(() => setFlash(false), 1800)
-    return () => window.clearTimeout(timer)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timer)
+    }
   }, [filled])
 
   return (
@@ -22,7 +29,7 @@ export function PoolScreen({ proposal, currentTeu, targetTeu, onFill, onReview, 
       <section className={`rp-pool-progress ${flash ? 'is-flashing' : ''}`}>
         <div className="rp-pool-progress__top"><div><span>함께 보내기 현황</span><h1>{filled ? '목표 물량을 채웠어요' : `${targetTeu - currentTeu}TEU만 더 모이면 확정`}</h1></div><StatusPill tone={filled ? 'green' : 'orange'}>{filled ? '목표 달성' : '모집 중'}</StatusPill></div>
         <div className="rp-progress-numbers"><strong>{currentTeu}<small>TEU</small></strong><span>/ 목표 {targetTeu}TEU · {percent}%</span></div>
-        <div className="rp-progress-track" aria-label={`모집 진행률 ${percent}%`}><i style={{ width: `${percent}%` }} /></div>
+        <div className="rp-progress-track" role="progressbar" aria-label="함께 보내기 모집 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow={percent} aria-valuetext={`${currentTeu}TEU / 목표 ${targetTeu}TEU`}><i style={{ width: `${percent}%` }} /></div>
         <div className="rp-countdown"><span>모집 마감</span><strong>18시간 42분 남음</strong></div>
       </section>
 
@@ -57,7 +64,7 @@ export function PoolScreen({ proposal, currentTeu, targetTeu, onFill, onReview, 
       {!filled && <button type="button" className="rp-demo-action" disabled={busy} onClick={onFill}><span>DEMO</span><div><strong>B사 3TEU 등록 시연</strong><small>화차가 채워지며 단가가 내려가는 장면</small></div><b>실행</b></button>}
       <button type="button" className="rp-disruption-link" onClick={onDisruption}><Icon name="alert" size={16} /> 참여사 이탈·AI 재제안 시연 보기</button>
 
-      <div className="rp-pool-actions"><PrimaryButton disabled={!filled} onClick={onReview}>{filled ? '코레일에 검토 요청 보내기' : `목표 달성까지 ${targetTeu - currentTeu}TEU 남음`}</PrimaryButton><SecondaryButton>내 조건 수정</SecondaryButton></div>
+      <div className="rp-pool-actions"><PrimaryButton disabled={!filled} onClick={onReview}>{filled ? '코레일에 검토 요청 보내기' : `목표 달성까지 ${targetTeu - currentTeu}TEU 남음`}</PrimaryButton><SecondaryButton onClick={onModify}>내 조건 수정</SecondaryButton></div>
       <LegalNotice />
     </div>
   )

@@ -37,11 +37,11 @@ export function ComparisonScreen({ proposals, initialProposal, onBack, onProceed
   return (
     <div className="rp-compare-screen">
       <div className="rp-compare-heading">
-        <div><span>제안 비교</span><h1>같은 기준으로 나란히 볼게요</h1></div>
+        <h1>같은 기준으로 나란히 볼게요</h1>
         <StatusPill tone="soft">{index + 1} / {proposals.length}</StatusPill>
       </div>
-      <div className="rp-compare-switcher">
-        {proposals.map((item, itemIndex) => <button type="button" key={item.id} className={itemIndex === index ? 'is-active' : ''} onClick={() => setIndex(itemIndex)}>{item.type.replace(' 제안', '')}</button>)}
+      <div className="rp-compare-switcher" aria-label="비교할 제안 선택">
+        {proposals.map((item, itemIndex) => <button type="button" key={item.id} aria-pressed={itemIndex === index} className={itemIndex === index ? 'is-active' : ''} onClick={() => setIndex(itemIndex)}>{item.type.replace(' 제안', '')}</button>)}
       </div>
       <div className="rp-compare-table" role="table" aria-label="내 원래 계획과 제안 비교">
         <div className="rp-compare-table__head" role="row"><span role="columnheader">비교 항목</span><strong role="columnheader">내 원래 계획</strong><strong role="columnheader">{proposal.type}</strong></div>

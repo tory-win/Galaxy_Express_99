@@ -7,7 +7,7 @@ const STATUS_TONE = {
   review_submitted: 'green',
 }
 
-export function DashboardScreen({ requests, connected, sourceCount, onNewRequest, onOpenRequest, onOpenPool, onOpenNotifications }) {
+export function DashboardScreen({ requests, onNewRequest, onOpenRequest, onOpenPool, onOpenNotifications }) {
   const displayRequests = requests?.length ? requests : [DEMO_REQUEST, DEMO_POOL_REQUEST]
 
   return (
@@ -20,13 +20,7 @@ export function DashboardScreen({ requests, connected, sourceCount, onNewRequest
         <PrimaryButton onClick={onNewRequest}><Icon name="plus" size={16} /> 새 화물 보내기</PrimaryButton>
       </section>
 
-      <div className="rp-demo-banner">
-        <span className="rp-live-dot" />
-        <div><strong>{sourceCount > 0 ? `공공데이터 ${sourceCount}종 실시간 연결` : connected ? '제품 API 연결됨' : '오프라인 데모 모드'}</strong><small>확정 자료와 가상 물량을 구분해 표시하는 시연 환경</small></div>
-        <StatusPill tone="soft">DEMO</StatusPill>
-      </div>
-
-      <SectionHeading title="내 운송 요청" aside={<button type="button" className="rp-text-button" onClick={onNewRequest}>전체보기</button>} />
+      <SectionHeading title="내 운송 요청" />
       <div className="rp-request-list">
         {displayRequests.slice(0, 2).map((request, index) => {
           const normalized = index === 1 && displayRequests.length === 1 ? DEMO_POOL_REQUEST : request

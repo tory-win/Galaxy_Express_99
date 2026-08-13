@@ -21,7 +21,7 @@ export function RailHeader({ title, eyebrow, onBack, onNotifications, unread = 1
     <>
       <StatusBar />
       <header className="rp-header">
-        <button type="button" className="rp-icon-button" aria-label="코레일 홈으로 돌아가기" onClick={onBack}>
+        <button type="button" className="rp-icon-button" aria-label="이전 화면으로 돌아가기" onClick={onBack}>
           <Icon name="back" size={19} />
         </button>
         <div className="rp-header__title">

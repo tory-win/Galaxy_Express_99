@@ -3,7 +3,6 @@ import {
   acceptDisruptionProposal,
   createAndAnalyzeFreightRequest,
   extractFreightConditions,
-  getPublicDataSources,
   listFreightRequests,
   saveProposalDecision,
   submitReviewRequest,
@@ -38,8 +37,6 @@ function readSavedView() {
 export function RailLogisticsApp({ onExit, onNotify }) {
   const [view, setView] = useState(readSavedView)
   const [requests, setRequests] = useState([DEMO_REQUEST])
-  const [connected, setConnected] = useState(false)
-  const [sourceCount, setSourceCount] = useState(0)
   const [requestId, setRequestId] = useState(DEMO_REQUEST.id)
   const [proposals, setProposals] = useState(PROPOSALS)
   const [selectedProposal, setSelectedProposal] = useState(PROPOSALS[0])
@@ -56,17 +53,17 @@ export function RailLogisticsApp({ onExit, onNotify }) {
 
   useEffect(() => {
     let active = true
-    Promise.all([listFreightRequests(), getPublicDataSources()]).then(([result, sources]) => {
+    listFreightRequests().then((result) => {
       if (!active) return
       setRequests(result.requests?.length ? result.requests : [DEMO_REQUEST])
-      setConnected(Boolean(result.connected))
-      setSourceCount((sources.datasets ?? []).filter((dataset) => dataset.status === 'connected').length)
     })
     return () => { active = false }
   }, [])
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
     bodyRef.current?.scrollTo({ top: 0, behavior: 'auto' })
+    bodyRef.current?.focus({ preventScroll: true })
   }, [view])
 
   const header = TITLES[view] ?? TITLES.dashboard
@@ -86,9 +83,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
   const extract = async (text) => {
     setBusy(true)
     try {
-      const result = await extractFreightConditions(text)
-      onNotify?.(result.source === 'ai' ? 'AI가 메일 조건을 인식했습니다' : '메일 조건 6개를 인식했습니다')
-      return result
+      return await extractFreightConditions(text)
     } finally {
       setBusy(false)
     }
@@ -104,8 +99,6 @@ export function RailLogisticsApp({ onExit, onNotify }) {
       setRequestId(result.request?.id ?? DEMO_REQUEST.id)
       setProposals(result.proposals?.length ? result.proposals : PROPOSALS)
       setSelectedProposal(result.proposals?.[0] ?? PROPOSALS[0])
-      setConnected(Boolean(result.connected))
-      setSourceCount((result.sources?.datasets ?? []).filter((dataset) => dataset.status === 'connected').length || sourceCount)
       navigate('proposals')
     } finally {
       setBusy(false)
@@ -130,7 +123,6 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     try {
       const result = await triggerDemoFill(requestId)
       setCurrentTeu(result.currentTeu ?? 18)
-      onNotify?.('새 참여사 3TEU가 합류해 목표 물량을 채웠습니다')
     } finally {
       setBusy(false)
     }
@@ -141,7 +133,6 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     try {
       const result = await acceptDisruptionProposal(requestId)
       setCurrentTeu(result.currentTeu ?? 15)
-      onNotify?.('새 참여사 조합으로 현황을 갱신했습니다')
       navigate('pool')
     } finally {
       setBusy(false)
@@ -159,14 +150,15 @@ export function RailLogisticsApp({ onExit, onNotify }) {
 
   return (
     <div className="rp-app">
+      <span className="rp-sr-only" aria-live="polite" aria-atomic="true">{header[0]} 화면</span>
       <RailHeader title={header[0]} eyebrow={header[1]} onBack={goBack} onNotifications={() => navigate('disruption')} />
-      <main ref={bodyRef} className={`rp-screen-body rp-screen-body--${view}`}>
+      <main ref={bodyRef} className={`rp-screen-body rp-screen-body--${view}`} tabIndex="-1" aria-label={`${header[0]} 화면`} aria-busy={busy}>
         {busy && view === 'request' && <div className="rp-loading-layer"><LoadingPanel /></div>}
-        {view === 'dashboard' && <DashboardScreen requests={requests} connected={connected} sourceCount={sourceCount} onNewRequest={() => navigate('request')} onOpenRequest={() => navigate('proposals')} onOpenPool={() => navigate('pool')} onOpenNotifications={() => navigate('disruption')} />}
+        {view === 'dashboard' && <DashboardScreen requests={requests} onNewRequest={() => navigate('request')} onOpenRequest={() => navigate('proposals')} onOpenPool={() => navigate('pool')} onOpenNotifications={() => navigate('disruption')} />}
         {view === 'request' && <RequestScreen onAnalyze={analyze} onExtract={extract} busy={busy} />}
-        {view === 'proposals' && <ProposalsScreen proposals={proposals} sourceCount={sourceCount} onProceed={proceed} onCompare={(proposal) => { setSelectedProposal(proposal); navigate('compare') }} onReject={reject} onModify={() => navigate('request')} />}
+        {view === 'proposals' && <ProposalsScreen proposals={proposals} onProceed={proceed} onCompare={(proposal) => { setSelectedProposal(proposal); navigate('compare') }} onReject={reject} onModify={() => navigate('request')} />}
         {view === 'compare' && <ComparisonScreen proposals={proposals} initialProposal={selectedProposal} onBack={() => navigate('proposals')} onProceed={proceed} />}
-        {view === 'pool' && <PoolScreen proposal={selectedProposal} currentTeu={currentTeu} targetTeu={targetTeu} onFill={fillPool} onReview={() => navigate('review')} onDisruption={() => navigate('disruption')} busy={busy} />}
+        {view === 'pool' && <PoolScreen proposal={selectedProposal} currentTeu={currentTeu} targetTeu={targetTeu} onFill={fillPool} onReview={() => navigate('review')} onModify={() => navigate('request')} onDisruption={() => navigate('disruption')} busy={busy} />}
         {view === 'disruption' && <DisruptionScreen onAccept={acceptDisruption} onCompare={() => navigate('compare')} onLeave={() => navigate('dashboard')} busy={busy} />}
         {view === 'review' && <ReviewScreen requestId={requestId} proposal={selectedProposal} onSubmit={submitReview} onDone={() => navigate('dashboard')} busy={busy} />}
       </main>

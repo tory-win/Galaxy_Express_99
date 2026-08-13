@@ -62,7 +62,7 @@ function App() {
   const notify = (message) => {
     window.clearTimeout(toastTimer.current)
     setToast(message)
-    toastTimer.current = window.setTimeout(() => setToast(''), 1_900)
+    toastTimer.current = window.setTimeout(() => setToast(''), 1_600)
   }
 
   const openBenefits = (tab = 'pass') => {
@@ -125,7 +125,7 @@ function App() {
 
         {!['benefits', 'rail-logistics'].includes(screen) && <BottomNav active={screen} onChange={setScreen} />}
 
-        {toast && <div className="kr-toast" role="status">{toast}</div>}
+        {toast && <div className={`kr-toast ${screen === 'rail-logistics' ? 'kr-toast--rail-logistics' : ''}`} role="status" aria-live="polite" aria-atomic="true">{toast}</div>}
 
         {cartOpen && (
           <div className="kr-sheet-layer" role="presentation" onMouseDown={() => setCartOpen(false)}>

@@ -25,14 +25,6 @@ export async function listFreightRequests() {
   }
 }
 
-export async function getPublicDataSources() {
-  try {
-    return await request('/sources')
-  } catch {
-    return { configured: false, mode: 'demo_snapshot', datasets: [] }
-  }
-}
-
 export async function extractFreightConditions(text) {
   try {
     return await request('/extract', {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AXIS_OPTIONS, DEFAULT_FORM, DEMO_EMAIL, formatManWon } from '../demoData.js'
 import { ConfidenceBadge, Icon, PrimaryButton, SecondaryButton, SectionHeading } from '../components.jsx'
 
@@ -15,7 +15,7 @@ function Field({ label, required = false, hint, children, evidence }) {
 function StepIndicator({ step }) {
   return (
     <div className="rp-stepper" aria-label={`3단계 중 ${step}단계`}>
-      {[1, 2, 3].map((item) => <span key={item} className={item <= step ? 'is-active' : ''}><i>{item < step ? '✓' : item}</i>{['기본 정보', '검토 범위', '확인'][item - 1]}</span>)}
+      {[1, 2, 3].map((item) => <span key={item} className={item <= step ? 'is-active' : ''} aria-current={item === step ? 'step' : undefined}><i>{item < step ? '✓' : item}</i>{['기본 정보', '검토 범위', '확인'][item - 1]}</span>)}
     </div>
   )
 }
@@ -28,6 +28,14 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
   const [evidence, setEvidence] = useState({})
   const [extracted, setExtracted] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      document.querySelector('.rp-screen-body')?.scrollTo({ top: 0, behavior: 'auto' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [step, mode])
 
   const update = (name, value) => setForm((current) => ({ ...current, [name]: value }))
   const updateAxis = (id, value) => setForm((current) => ({ ...current, axes: { ...current.axes, [id]: value } }))
@@ -81,9 +89,9 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
       {step === 1 && (
         <>
           <SectionHeading eyebrow="STEP 1" title="보내실 화물을 알려주세요" />
-          <div className="rp-segmented" role="tablist">
-            <button type="button" className={mode === 'direct' ? 'is-active' : ''} onClick={() => setMode('direct')}>직접 입력</button>
-            <button type="button" className={mode === 'email' ? 'is-active' : ''} onClick={() => setMode('email')}>이메일·문서 붙여넣기</button>
+          <div className="rp-segmented" aria-label="운송 조건 입력 방법">
+            <button type="button" aria-pressed={mode === 'direct'} className={mode === 'direct' ? 'is-active' : ''} onClick={() => setMode('direct')}>직접 입력</button>
+            <button type="button" aria-pressed={mode === 'email'} className={mode === 'email' ? 'is-active' : ''} onClick={() => setMode('email')}>이메일·문서 붙여넣기</button>
           </div>
 
           {mode === 'email' && (
@@ -126,7 +134,7 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
               <Field label="도착 마감" required evidence={evidence.deadline}><input type="datetime-local" value={form.deadline} onChange={(event) => update('deadline', event.target.value)} /></Field>
               <Field label="위험물 여부" required evidence={evidence.hazardous}>
                 <div className="rp-choice-row">
-                  {[['no', '아니오'], ['yes', '예']].map(([value, label]) => <button type="button" key={value} className={form.hazardous === value ? 'is-active' : ''} onClick={() => update('hazardous', value)}>{label}</button>)}
+                  {[['no', '아니오'], ['yes', '예']].map(([value, label]) => <button type="button" key={value} aria-pressed={form.hazardous === value} className={form.hazardous === value ? 'is-active' : ''} onClick={() => update('hazardous', value)}>{label}</button>)}
                 </div>
               </Field>
               {form.hazardous === 'yes' && <div className="rp-danger-note"><Icon name="alert" size={18} /><div><strong>위험물은 별도 검토가 필요합니다</strong><p>자동 계산을 중단하고 코레일 담당자가 취급 가능 여부를 확인합니다.</p></div></div>}
@@ -153,10 +161,10 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
               <section className={`rp-axis-card ${form.lockedAxes.includes(axis.id) ? 'is-locked' : ''}`} key={axis.id}>
                 <div className="rp-axis-card__head">
                   <div><strong>{axis.label}</strong><small>{axis.helper}</small></div>
-                  <button type="button" className="rp-lock-button" onClick={() => toggleLock(axis.id)}>{form.lockedAxes.includes(axis.id) ? '🔒 잠금' : '잠그기'}</button>
+                  <button type="button" className="rp-lock-button" aria-pressed={form.lockedAxes.includes(axis.id)} onClick={() => toggleLock(axis.id)}>{form.lockedAxes.includes(axis.id) ? '잠금 해제' : '잠그기'}</button>
                 </div>
                 <div className="rp-axis-options">
-                  {axis.options.map((option) => <button type="button" key={option} disabled={form.lockedAxes.includes(axis.id)} className={form.axes[axis.id] === option ? 'is-active' : ''} onClick={() => updateAxis(axis.id, option)}>{option}</button>)}
+                  {axis.options.map((option) => <button type="button" key={option} disabled={form.lockedAxes.includes(axis.id)} aria-pressed={form.axes[axis.id] === option} className={form.axes[axis.id] === option ? 'is-active' : ''} onClick={() => updateAxis(axis.id, option)}>{option}</button>)}
                 </div>
               </section>
             ))}
@@ -194,11 +202,13 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
 
       {error && <p className="rp-form-error" role="alert">{error}</p>}
 
-      <div className="rp-form-actions">
-        {step > 1 && <SecondaryButton onClick={() => setStep((current) => current - 1)}>이전</SecondaryButton>}
-        {step < 3 && <PrimaryButton onClick={next} disabled={mode === 'email' && !extracted && step === 1}>다음</PrimaryButton>}
-        {step === 3 && <PrimaryButton onClick={() => onAnalyze(form)} disabled={busy || form.hazardous === 'yes'}>{busy ? 'AI가 분석 중…' : 'AI에게 방법 물어보기'}</PrimaryButton>}
-      </div>
+      {!(step === 1 && mode === 'email' && !extracted) && (
+        <div className="rp-form-actions">
+          {step > 1 && <SecondaryButton onClick={() => setStep((current) => current - 1)}>이전</SecondaryButton>}
+          {step < 3 && <PrimaryButton onClick={next}>다음</PrimaryButton>}
+          {step === 3 && <PrimaryButton onClick={() => onAnalyze(form)} disabled={busy || form.hazardous === 'yes'}>{busy ? 'AI가 분석 중…' : 'AI에게 방법 물어보기'}</PrimaryButton>}
+        </div>
+      )}
     </div>
   )
 }

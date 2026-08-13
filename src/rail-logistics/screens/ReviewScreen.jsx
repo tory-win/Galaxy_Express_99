@@ -11,7 +11,10 @@ export function ReviewScreen({ requestId, proposal, onSubmit, onDone, busy }) {
   const [reviewId, setReviewId] = useState('')
 
   useEffect(() => {
-    if (submitted) document.querySelector('.rp-screen-body')?.scrollTo({ top: 0, behavior: 'auto' })
+    if (submitted) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      document.querySelector('.rp-screen-body')?.scrollTo({ top: 0, behavior: 'auto' })
+    }
   }, [submitted])
 
   const submit = async () => {
@@ -64,7 +67,7 @@ export function ReviewScreen({ requestId, proposal, onSubmit, onDone, busy }) {
         <p>도로에서 철도로 전환하는 중소기업의 대상 요건에 해당할 수 있습니다. 개별 건 자동 지급이 아닌 <strong>사전 협약제</strong>이며, 최신 공모와 단가는 별도 확인이 필요합니다.</p>
       </ReviewSection>
 
-      <section className="rp-review-contact"><span>담당자 연락처</span><strong>물류팀 담당자 · 010-0000-0000</strong><button type="button">수정</button></section>
+      <section className="rp-review-contact"><span>담당자 연락처</span><strong>물류팀 담당자 · 010-0000-0000</strong></section>
       <div className="rp-attachment-row"><button type="button" onClick={() => window.print()}>비교표 PDF 미리보기</button><button type="button" onClick={() => window.print()}>탄소 자료 PDF 미리보기</button></div>
       <LegalNotice />
       <div className="rp-review-actions"><SecondaryButton onClick={() => window.print()}>PDF 저장</SecondaryButton><PrimaryButton disabled={busy} onClick={submit}>{busy ? '전송 중…' : '검토 요청 보내기'}</PrimaryButton></div>

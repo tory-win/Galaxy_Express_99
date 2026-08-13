@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { buildProposals, extractConditionsFromText, validateFreightRequest } from '../src/demo-engine.js'
 import { normalizeAiExtraction } from '../src/ai-client.js'
+import { formatDepartureDate, formatTeu } from '../src/presentation.js'
 
 test('extracts only supported values from a freight email', () => {
   const result = extractConditionsFromText('아산 음봉 공장에서 부산신항까지 20ft 컨테이너 4개를 보냅니다. 8월 18일 출발, 8월 20일 오전 9시 도착. 위험물은 아닙니다. 도로 운송 견적은 312만원입니다.')
@@ -55,4 +56,11 @@ test('normalizes AI extraction before values reach the freight form', () => {
     weightTons: 48,
     teu: 4,
   })
+})
+
+test('formats PostgreSQL dates and TEU values consistently for the dashboard', () => {
+  assert.equal(formatDepartureDate('2026-08-18'), '8월 18일(화)')
+  assert.equal(formatDepartureDate(new Date('2026-08-18T00:00:00+09:00')), '8월 18일(화)')
+  assert.equal(formatTeu('4.00'), '4')
+  assert.equal(formatTeu('4.50'), '4.50')
 })

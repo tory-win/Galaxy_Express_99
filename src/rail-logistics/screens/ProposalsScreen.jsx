@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BASELINE, TIMING_GUIDE, formatManWon } from '../demoData.js'
 import { ConfidenceBadge, Icon, LegalNotice, PrimaryButton, SecondaryButton, StatusPill } from '../components.jsx'
 
@@ -39,9 +39,9 @@ function ProposalCard({ proposal, onProceed, onCompare, onReject }) {
 
       <div className="rp-confidence-row">{proposal.confidence.map((item) => <ConfidenceBadge key={item} kind={item.includes('확인 필요') ? '확인 필요' : item.includes('예상값') ? '예상값' : '확인 완료'} />)}</div>
 
-      <button type="button" className="rp-details-toggle" onClick={() => setDetailsOpen((open) => !open)}>{detailsOpen ? '계산 근거 접기' : '계산 근거 펼쳐보기'} <span>{detailsOpen ? '⌃' : '⌄'}</span></button>
+      <button type="button" className="rp-details-toggle" aria-expanded={detailsOpen} aria-controls={`breakdown-${proposal.id}`} onClick={() => setDetailsOpen((open) => !open)}>{detailsOpen ? '계산 근거 접기' : '계산 근거 펼쳐보기'} <span>{detailsOpen ? '⌃' : '⌄'}</span></button>
       {detailsOpen && (
-        <div className="rp-breakdown">
+        <div className="rp-breakdown" id={`breakdown-${proposal.id}`}>
           {proposal.breakdown.map(([label, value, confidence]) => <div key={label}><span>{label}</span><strong>{formatManWon(value)} <ConfidenceBadge kind={confidence} compact /></strong></div>)}
           <p>철도 거리·시간표는 공공데이터 기준이며, 실제 운임과 적재 가능 여부는 코레일 확인 후 확정됩니다.</p>
         </div>
@@ -52,9 +52,41 @@ function ProposalCard({ proposal, onProceed, onCompare, onReject }) {
   )
 }
 
-export function ProposalsScreen({ proposals, sourceCount, onProceed, onCompare, onReject, onModify }) {
+export function ProposalsScreen({ proposals, onProceed, onCompare, onReject, onModify }) {
   const [rejecting, setRejecting] = useState(null)
   const [round, setRound] = useState(1)
+  const [watching, setWatching] = useState(false)
+  const modalRef = useRef(null)
+  const previousFocusRef = useRef(null)
+
+  useEffect(() => {
+    if (!rejecting) return undefined
+    previousFocusRef.current = document.activeElement
+    const frame = window.requestAnimationFrame(() => modalRef.current?.querySelector('button')?.focus())
+    return () => {
+      window.cancelAnimationFrame(frame)
+      previousFocusRef.current?.focus()
+    }
+  }, [rejecting])
+
+  const handleModalKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      setRejecting(null)
+      return
+    }
+    if (event.key !== 'Tab') return
+    const focusable = [...(modalRef.current?.querySelectorAll('button:not([disabled])') ?? [])]
+    const first = focusable[0]
+    const last = focusable.at(-1)
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault()
+      last?.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first?.focus()
+    }
+  }
 
   const chooseReason = (reason) => {
     onReject(rejecting, reason)
@@ -69,12 +101,6 @@ export function ProposalsScreen({ proposals, sourceCount, onProceed, onCompare, 
         <div><small>RAILPOOL AI · {round}차 제안</small><h1>출발일을 하루만 옮기시면<br />전체 비용이 약 18% 낮아집니다.</h1><p>대신 도착이 4시간 늦어집니다. 좋은 점과 불편한 점을 같은 기준으로 보여드릴게요.</p></div>
       </section>
 
-      <div className={`rp-source-banner ${sourceCount > 0 ? 'is-live' : ''}`}>
-        <span><Icon name="check" size={13} /></span>
-        <div><strong>{sourceCount > 0 ? `KORAIL·ODCloud 공공데이터 ${sourceCount}종 연결` : '가상 데이터 기준 분석'}</strong><small>{sourceCount > 0 ? '거리·시간표·최저운임·임율·적하시간·작업선 조회 완료' : '실데이터 연결 전에는 모든 수치를 예상값으로 표시합니다'}</small></div>
-        <ConfidenceBadge kind={sourceCount > 0 ? '확인 완료' : '예상값'} compact />
-      </div>
-
       <section className="rp-baseline-card">
         <div><span>내 원래 계획 · 기준선</span><ConfidenceBadge kind="확인 완료" /></div>
         <strong>{BASELINE.mode}</strong>
@@ -87,7 +113,7 @@ export function ProposalsScreen({ proposals, sourceCount, onProceed, onCompare, 
         <div><StatusPill tone="blue">{TIMING_GUIDE.type}</StatusPill><small>효과가 작을 때 숨기지 않습니다</small></div>
         <h2>{TIMING_GUIDE.title}</h2><p>{TIMING_GUIDE.body}</p>
         <ul>{TIMING_GUIDE.conditions.map((condition) => <li key={condition}><Icon name="check" size={13} />{condition}</li>)}</ul>
-        <button type="button">이 조건이 되면 알려주기 <span>{TIMING_GUIDE.reviewAt} 재검토</span></button>
+        <button type="button" aria-pressed={watching} className={watching ? 'is-active' : ''} onClick={() => setWatching((value) => !value)}>{watching ? '알림 등록 완료' : '이 조건이 되면 알려주기'} <span>{TIMING_GUIDE.reviewAt} 재검토</span></button>
       </section>
 
       <button type="button" className="rp-modify-link" onClick={onModify}>열어둔 조정 축 수정하기</button>
@@ -95,11 +121,12 @@ export function ProposalsScreen({ proposals, sourceCount, onProceed, onCompare, 
 
       {rejecting && (
         <div className="rp-modal-layer" role="presentation" onMouseDown={() => setRejecting(null)}>
-          <section className="rp-modal" role="dialog" aria-modal="true" aria-labelledby="reject-title" onMouseDown={(event) => event.stopPropagation()}>
+          <section ref={modalRef} className="rp-modal" role="dialog" aria-modal="true" aria-labelledby="reject-title" aria-describedby="reject-description" onKeyDown={handleModalKeyDown} onMouseDown={(event) => event.stopPropagation()}>
             <i className="rp-sheet-handle" />
+            <button type="button" className="rp-modal-close" aria-label="거절 사유 선택 닫기" onClick={() => setRejecting(null)}>×</button>
             <span className="rp-modal__step">다음 제안을 더 정확하게 찾을게요</span>
             <h2 id="reject-title">어떤 점이 어려우셨나요?</h2>
-            <p>선택한 조건은 잠그고, 남은 범위 안에서 다시 계산합니다.</p>
+            <p id="reject-description">선택한 조건은 잠그고, 남은 범위 안에서 다시 계산합니다.</p>
             <div className="rp-reason-grid">{REJECTION_REASONS.map((reason) => <button type="button" key={reason} onClick={() => chooseReason(reason)}>{reason}</button>)}</div>
           </section>
         </div>

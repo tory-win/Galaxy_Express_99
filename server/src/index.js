@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { closeDatabase, databaseHealth, pool } from './db.js'
 import { buildProposals, extractConditionsFromText, validateFreightRequest } from './demo-engine.js'
 import { extractWithAi } from './ai-client.js'
+import { formatDepartureDate, formatTeu } from './presentation.js'
 import { getPublicDataStatus } from './public-data.js'
 
 const app = express()
@@ -22,6 +23,7 @@ app.use((request, response, next) => {
 
 function toRequest(row) {
   const payload = row.payload ?? {}
+  const departureDate = formatDepartureDate(row.departure_date)
   const statusLabels = {
     analyzing: 'AI 분석 중',
     proposal_ready: '역제안 도착 · 2건',
@@ -30,15 +32,15 @@ function toRequest(row) {
     closed: '종료',
   }
   return {
+    ...payload,
     id: row.id,
     origin: payload.originLabel ?? row.origin,
     destination: payload.destinationLabel ?? row.destination,
-    quantity: payload.quantity ?? `${row.container_size} × ${row.container_count} · ${row.teu}TEU`,
-    departureDate: payload.departureLabel ?? row.departure_date,
+    quantity: payload.quantity ?? `${row.container_size} × ${row.container_count} · ${formatTeu(row.teu)}TEU`,
+    departureDate: payload.departureLabel ?? departureDate,
     status: row.status,
     statusLabel: payload.statusLabel ?? statusLabels[row.status] ?? '상태 확인 중',
     updatedAt: payload.updatedAt ?? '방금 전',
-    ...payload,
   }
 }
 
