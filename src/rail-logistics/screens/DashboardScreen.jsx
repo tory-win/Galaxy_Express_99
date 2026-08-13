@@ -52,7 +52,7 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onCreateR
         <SectionHeading id="rail-logistics-requests-title" title={`내 운송 요청 ${requests.length}건`} />
         <button type="button" className="rp-create-request-link" onClick={onCreateRequest}>
           <Icon name="plus" size={15} />
-          <span>운송 요청 하러가기</span>
+          <span>AI에게 운송 요청하기</span>
         </button>
       </div>
       {totalEcoPoints > 0 && (

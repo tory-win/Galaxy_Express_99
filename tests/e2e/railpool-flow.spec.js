@@ -49,7 +49,8 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expect(page.getByText('10/10', { exact: true })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('heading', { name: '내 운송 요청 0건' })).toBeVisible()
   await expect(page.getByText('아직 운송 요청이 없습니다')).toBeVisible()
-  await expect(page.getByRole('button', { name: '운송 요청 하러가기' })).toBeVisible()
+  const createRequestLink = page.locator('.rp-create-request-link')
+  await expect(createRequestLink).toHaveAccessibleName('AI에게 운송 요청하기')
   const requestFilters = page.getByRole('group', { name: '내 운송 요청 상황별 필터' })
   await expect(requestFilters.getByRole('button')).toHaveCount(5)
   await requestFilters.getByRole('button', { name: /함께 보내기/ }).click()
@@ -61,7 +62,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expectUsableLayout(page)
   await capture(page, '02-railpool-dashboard')
 
-  await page.getByRole('button', { name: 'AI에게 찾아달라하기' }).click()
+  await createRequestLink.click()
   await expect(page.locator('.rp-form-actions')).toHaveCount(0)
   await page.getByRole('button', { name: '이메일·문서' }).click()
   await page.getByRole('textbox', { name: '메일 또는 문서 내용' }).fill(`제목: 부산신항 산업용 부품 출하 요청
@@ -138,7 +139,7 @@ test('refresh keeps the Rail Logistics context instead of resetting to Korail ho
 
 test('request method order and searchable public-data stations are keyboard usable', async ({ page }) => {
   await page.goto('./#rail-logistics')
-  await page.getByRole('button', { name: 'AI에게 찾아달라하기' }).click()
+  await page.locator('.rp-bottom-nav').getByRole('button', { name: 'AI에게 운송 요청하기' }).click()
 
   const methods = page.locator('.rp-segmented button')
   await expect(methods).toHaveCount(3)
@@ -170,7 +171,7 @@ test('320px layout keeps readable spacing without overflow or undersized control
     )),
   }))
   expect(filterLayout).toEqual({ hasHorizontalScroll: true, buttonsStayOnOneLine: true })
-  await expect(page.getByRole('button', { name: '운송 요청 하러가기' })).toBeVisible()
+  await expect(page.locator('.rp-create-request-link')).toHaveAccessibleName('AI에게 운송 요청하기')
 
   const pointValue = page.locator('.rp-eco-points strong')
   await expect(pointValue).toHaveCSS('white-space', 'nowrap')
