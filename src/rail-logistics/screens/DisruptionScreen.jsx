@@ -42,7 +42,7 @@ export function DisruptionScreen({ network, pool, onOpenPool, onLeave }) {
         {events.length === 0 && <div className="rp-empty-state"><strong>최근 변동이 없습니다</strong><p>새 화물이 등록되면 바로 알려드립니다.</p></div>}
       </section>
 
-      <div className="rp-recovery-actions"><SecondaryButton onClick={onLeave}>내 운송 목록으로</SecondaryButton><PrimaryButton onClick={onOpenPool}>현재 함께 보내기 보기</PrimaryButton></div>
+      <div className="rp-recovery-actions"><SecondaryButton onClick={onLeave}>내 운송 목록으로</SecondaryButton><PrimaryButton onClick={onOpenPool}>함께 보내기 현황</PrimaryButton></div>
     </div>
   )
 }

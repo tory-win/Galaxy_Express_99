@@ -606,7 +606,8 @@
 .rp-event-feed article strong { font-size: var(--kr-font-11); }
 .rp-event-feed article p { margin: var(--kr-space-1) 0 0; color: var(--kr-color-muted); font-size: var(--kr-font-10); line-height: 1.4; }
 .rp-event-feed article time { align-self: flex-start; color: var(--kr-color-muted); font-size: var(--kr-font-10); }
-.rp-recovery-actions { position: static; margin-top: var(--kr-space-3); padding: 0; border: 0; box-shadow: none; }
+.rp-recovery-actions { position: static; margin: var(--kr-space-3) 0 0; padding: 0; border: 0; box-shadow: none; }
+.rp-recovery-actions .rp-primary-button { width: 100%; }
 
 /* Review */
 .rp-review-warning { display: flex; padding: var(--kr-space-3); gap: var(--kr-space-2); border: 1px solid var(--kr-color-warning); border-radius: var(--kr-radius-card); background: var(--kr-color-warning-soft); color: var(--kr-color-warning-strong); }
