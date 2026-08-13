@@ -2,13 +2,40 @@ import { useEffect, useRef, useState } from 'react'
 import { formatManWon } from '../demoData.js'
 import { ConfidenceBadge, Icon, LegalNotice, PrimaryButton, SecondaryButton, StatusPill, TertiaryButton } from '../components.jsx'
 
-export function PoolScreen({ proposal, pool, network, onReview, onModify, onDisruption, onCancel }) {
+export function PoolScreen({ proposal, pool, network, onReview, onModify, onDisruption, onCancel, demoMode = false }) {
   const [flash, setFlash] = useState(false)
   const [notifications, setNotifications] = useState(true)
+  const [displayedTeu, setDisplayedTeu] = useState(pool.currentTeu)
+  const [displayedUnitCost, setDisplayedUnitCost] = useState(pool.unitCost)
   const previousTeuRef = useRef(pool.currentTeu)
-  const filled = pool.currentTeu >= pool.targetTeu
-  const percent = Math.min(100, Math.round((pool.currentTeu / pool.targetTeu) * 100))
+  const displayedValuesRef = useRef({ teu: pool.currentTeu, unitCost: pool.unitCost })
+  const visibleTeu = demoMode ? displayedTeu : pool.currentTeu
+  const visibleUnitCost = demoMode ? displayedUnitCost : pool.unitCost
+  const filled = visibleTeu >= pool.targetTeu
+  const percent = Math.min(100, Math.round((visibleTeu / pool.targetTeu) * 100))
   const latestJoin = network.recentEvents?.find((event) => event.requestId === pool.requestId && event.type === 'pool_joined')
+
+  useEffect(() => {
+    if (!demoMode) return undefined
+    const from = displayedValuesRef.current
+    const to = { teu: Number(pool.currentTeu), unitCost: Number(pool.unitCost) }
+    const startedAt = window.performance.now()
+    let frame = 0
+    const animate = (now) => {
+      const progress = Math.min(1, (now - startedAt) / 1_000)
+      const eased = 1 - ((1 - progress) ** 3)
+      const next = {
+        teu: Math.round(from.teu + ((to.teu - from.teu) * eased)),
+        unitCost: Math.round(from.unitCost + ((to.unitCost - from.unitCost) * eased)),
+      }
+      displayedValuesRef.current = next
+      setDisplayedTeu(next.teu)
+      setDisplayedUnitCost(next.unitCost)
+      if (progress < 1) frame = window.requestAnimationFrame(animate)
+    }
+    frame = window.requestAnimationFrame(animate)
+    return () => window.cancelAnimationFrame(frame)
+  }, [demoMode, pool.currentTeu, pool.unitCost])
 
   useEffect(() => {
     if (pool.currentTeu <= previousTeuRef.current) {
@@ -29,14 +56,14 @@ export function PoolScreen({ proposal, pool, network, onReview, onModify, onDisr
   }, [pool.currentTeu])
 
   const ownerTeu = pool.participants.find((participant) => participant.mine)?.teu ?? 0
-  const estimatedTotal = pool.unitCost * ownerTeu
+  const estimatedTotal = visibleUnitCost * ownerTeu
 
   return (
     <div className="rp-pool-screen">
       <section className={`rp-pool-progress ${flash ? 'is-flashing' : ''}`}>
-        <div className="rp-pool-progress__top"><div><span>함께 보내기 현황</span><h1>{filled ? '목표 물량을 채웠어요' : `${pool.targetTeu - pool.currentTeu}TEU만 더 모이면 확정`}</h1></div><StatusPill tone={filled ? 'green' : 'orange'}>{filled ? '목표 달성' : '모집 중'}</StatusPill></div>
-        <div className="rp-progress-numbers"><strong>{pool.currentTeu}<small>TEU</small></strong><span>/ 목표 {pool.targetTeu}TEU · {percent}%</span></div>
-        <div className="rp-progress-track" role="progressbar" aria-label="함께 보내기 모집 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow={percent} aria-valuetext={`${pool.currentTeu}TEU / 목표 ${pool.targetTeu}TEU`}><i style={{ width: `${percent}%` }} /></div>
+        <div className="rp-pool-progress__top"><div><span>함께 보내기 현황</span><h1>{filled ? '목표 물량을 채웠어요' : `${pool.targetTeu - visibleTeu}TEU만 더 모이면 확정`}</h1></div><StatusPill tone={filled ? 'green' : 'orange'}>{filled ? '목표 달성' : '모집 중'}</StatusPill></div>
+        <div className="rp-progress-numbers"><strong>{visibleTeu}<small>TEU</small></strong><span>/ 목표 {pool.targetTeu}TEU · {percent}%</span></div>
+        <div className="rp-progress-track" role="progressbar" aria-label="함께 보내기 모집 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow={percent} aria-valuetext={`${visibleTeu}TEU / 목표 ${pool.targetTeu}TEU`}><i style={{ width: `${percent}%` }} /></div>
         <div className="rp-countdown"><span>화주 네트워크</span><strong>{network.activeAgents}곳에서 실시간 확인 중</strong></div>
       </section>
 
@@ -45,7 +72,7 @@ export function PoolScreen({ proposal, pool, network, onReview, onModify, onDisr
       <section className="rp-pool-economics">
         <div><span>내 예상 전체 비용</span><strong>{formatManWon(estimatedTotal)}</strong><small><ConfidenceBadge kind="예상값" compact /> 현재 조합 기준</small></div>
         <i />
-        <div><span>1TEU당 예상 단가</span><strong>{formatManWon(pool.unitCost)}</strong><small className="is-positive">{filled ? '목표 물량 기준 단가' : '물량이 늘면 더 낮아집니다'}</small></div>
+        <div><span>1TEU당 예상 단가</span><strong>{formatManWon(visibleUnitCost)}</strong><small className="is-positive">{filled ? '목표 물량 기준 단가' : '물량이 늘면 더 낮아집니다'}</small></div>
       </section>
 
       <section className="rp-participant-section">

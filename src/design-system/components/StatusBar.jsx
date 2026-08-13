@@ -7,12 +7,17 @@ const formatTime = () => new Intl.DateTimeFormat('ko-KR', {
 }).format(new Date())
 
 export function StatusBar() {
-  const [time, setTime] = useState(formatTime)
+  const demoMode = new URLSearchParams(window.location.search).get('demo') === '1'
+  const [time, setTime] = useState(() => demoMode ? '15:51' : formatTime())
 
   useEffect(() => {
+    if (demoMode) {
+      setTime('15:51')
+      return undefined
+    }
     const timer = window.setInterval(() => setTime(formatTime()), 15_000)
     return () => window.clearInterval(timer)
-  }, [])
+  }, [demoMode])
 
   return (
     <div className="kr-statusbar" aria-label="상태 막대">

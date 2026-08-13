@@ -96,11 +96,27 @@ function StationCombobox({ id, value, onChange, placeholder }) {
   )
 }
 
-export function RequestScreen({ onAnalyze, onExtract, busy, initialVoiceText = '', onInitialVoiceTextConsumed }) {
+function initialForm(demoMode) {
+  if (!demoMode) return DEFAULT_FORM
+  return {
+    ...DEFAULT_FORM,
+    axes: {
+      departure: '불가',
+      deadline: '불가',
+      station: '지정한 곳만',
+      split: '불가',
+      rollover: '불가',
+      carrier: '기존 유지',
+      storage: '불가',
+    },
+  }
+}
+
+export function RequestScreen({ onAnalyze, onExtract, busy, demoMode = false, initialVoiceText = '', onInitialVoiceTextConsumed }) {
   const [step, setStep] = useState(1)
   const [mode, setMode] = useState('voice')
   const [emailText, setEmailText] = useState(initialVoiceText)
-  const [form, setForm] = useState(DEFAULT_FORM)
+  const [form, setForm] = useState(() => initialForm(demoMode))
   const [evidence, setEvidence] = useState({})
   const [extracted, setExtracted] = useState(false)
   const [error, setError] = useState('')
@@ -128,9 +144,10 @@ export function RequestScreen({ onAnalyze, onExtract, busy, initialVoiceText = '
   const update = (name, value) => setForm((current) => ({ ...current, [name]: value }))
   const updateAxis = (id, value) => setForm((current) => ({ ...current, axes: { ...current.axes, [id]: value } }))
   const opportunityCount = useMemo(() => {
+    if (demoMode) return form.axes.departure === '불가' ? 1 : 3
     const open = AXIS_OPTIONS.filter((axis) => !['불가', '지정한 곳만', '기존 유지'].includes(form.axes[axis.id])).length
     return Math.min(5, Math.max(1, open - 1))
-  }, [form.axes])
+  }, [demoMode, form.axes])
 
   const handleExtract = async () => {
     if (!emailText.trim()) {
@@ -311,7 +328,7 @@ export function RequestScreen({ onAnalyze, onExtract, busy, initialVoiceText = '
           </div>
           <aside className="rp-opportunity-panel">
             <div><span><Icon name="train" size={16} /></span><div><small>지금 조건으로 찾을 수 있는 방법</small><strong>{opportunityCount}가지</strong></div></div>
-            <p>출발일을 ±2일로 열면 <b>{Math.min(5, opportunityCount + 2)}가지</b>로 늘어납니다.</p>
+            <p>출발일을 {demoMode ? '±1일' : '±2일'}로 열면 <b>{demoMode ? 3 : Math.min(5, opportunityCount + 2)}가지</b>로 늘어납니다.</p>
           </aside>
           <p className="rp-skip-note">잘 모르겠으면 넘어가셔도 됩니다. 제안을 보면서 다시 정할 수 있어요.</p>
         </>

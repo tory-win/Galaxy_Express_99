@@ -62,6 +62,32 @@
   border: 0;
 }
 
+.rp-demo-push {
+  position: absolute;
+  z-index: 95;
+  top: 42px;
+  right: var(--kr-space-3);
+  left: var(--kr-space-3);
+  display: grid;
+  min-height: 78px;
+  padding: var(--kr-space-3) var(--kr-space-4);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--kr-radius-card);
+  background: rgba(22, 31, 48, 0.96);
+  box-shadow: 0 12px 28px rgba(12, 22, 40, 0.24);
+  color: #fff;
+  text-align: left;
+  animation: rp-demo-push-in 320ms var(--kr-ease-out);
+}
+.rp-demo-push span { color: #9ec5ff; font-size: var(--kr-font-9); font-weight: var(--kr-weight-bold); }
+.rp-demo-push strong { margin-top: 2px; font-size: var(--kr-font-11); }
+.rp-demo-push small { margin-top: 2px; color: rgba(255, 255, 255, 0.82); font-size: var(--kr-font-9); line-height: 1.35; }
+.rp-app.is-demo-mode .rp-progress-track i { transition: width 100ms linear; }
+
+@keyframes rp-demo-push-in {
+  from { opacity: 0; transform: translateY(-12px); }
+}
+
 .rp-primary-button,
 .rp-secondary-button { width: 100%; }
 .rp-screen-body .rp-primary-button {
