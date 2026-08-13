@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Icon, PrimaryButton, SectionHeading, StatusPill } from '../components.jsx'
+import { Icon, SectionHeading, StatusPill } from '../components.jsx'
 
 const STATUS_TONE = {
   proposal_ready: 'blue',
@@ -24,7 +24,7 @@ function eventCopy(event) {
   return '함께 보낼 수 있는 화물 조건을 계속 확인하고 있습니다.'
 }
 
-export function DashboardScreen({ requests, network, liveStatus, busy, recording, quickVoiceText, onToggleRecording, onOpenRequest, onOpenPool, onOpenNotifications }) {
+export function DashboardScreen({ requests, network, liveStatus, busy, onOpenRequest, onOpenPool, onOpenNotifications }) {
   const latestEvent = network.recentEvents?.[0]
   const [requestFilter, setRequestFilter] = useState('all')
   const totalEcoPoints = useMemo(() => requests.reduce((total, request) => total + (request.ecoPoints ?? 0), 0), [requests])
@@ -39,20 +39,6 @@ export function DashboardScreen({ requests, network, liveStatus, busy, recording
 
   return (
     <div className="rp-dashboard">
-      <section className="rp-hero-card" aria-labelledby="rail-logistics-start-title">
-        <h1 id="rail-logistics-start-title">화물 조건을 등록하고<br />더 효율적인 운송 조건을 찾아보세요</h1>
-        <PrimaryButton className={recording ? 'is-recording' : ''} onClick={onToggleRecording}>
-          <Icon name={recording ? 'stop' : 'mic'} size={16} /> {recording ? '녹음 종료' : '녹음 시작'}
-        </PrimaryButton>
-        {recording && (
-          <div className="rp-quick-voice">
-            <label htmlFor="quick-voice-transcript">말씀하신 화물 요청</label>
-            <textarea id="quick-voice-transcript" value={quickVoiceText} placeholder="말씀하시면 여기에 바로 표시됩니다…" readOnly aria-live="polite" />
-            <small>음성 파일은 저장하지 않으며, 녹음을 종료하면 내용을 확인하고 수정할 수 있습니다.</small>
-          </div>
-        )}
-      </section>
-
       <section className="rp-network-card" aria-label="함께 보내기 네트워크 현황">
         <div className="rp-network-card__top">
           <span className={`rp-network-pulse ${liveStatus === 'live' ? 'is-live' : ''}`} />

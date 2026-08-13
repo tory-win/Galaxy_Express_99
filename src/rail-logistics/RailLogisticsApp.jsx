@@ -54,14 +54,10 @@ export function RailLogisticsApp({ onExit, onNotify }) {
   const [liveStatus, setLiveStatus] = useState('connecting')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [recording, setRecording] = useState(false)
-  const [quickVoiceText, setQuickVoiceText] = useState('')
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const bodyRef = useRef(null)
   const activePoolRef = useRef('')
   const refreshTimerRef = useRef(null)
-  const quickRecognitionRef = useRef(null)
-  const quickConfirmedTextRef = useRef('')
   const cancelDialogRef = useRef(null)
   const cancelTriggerRef = useRef(null)
 
@@ -150,7 +146,6 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     return () => {
       active = false
       unsubscribe()
-      quickRecognitionRef.current?.abort()
       window.clearTimeout(refreshTimerRef.current)
     }
   }, [])
@@ -322,62 +317,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     else navigate('dashboard')
   }
 
-  const startQuickVoiceRequest = async () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      setError('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 또는 Edge에서 이용해 주세요.')
-      return
-    }
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setError('이 브라우저에서는 마이크 권한을 요청할 수 없습니다.')
-      return
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      stream.getTracks().forEach((track) => track.stop())
-    } catch {
-      setRecording(false)
-      setError('녹음을 시작하려면 마이크 권한을 허용해 주세요.')
-      return
-    }
-
-    const recognition = new SpeechRecognition()
-    recognition.lang = 'ko-KR'
-    recognition.continuous = true
-    recognition.interimResults = true
-    quickConfirmedTextRef.current = ''
-    setQuickVoiceText('')
-    recognition.onresult = (event) => {
-      let interimText = ''
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        const phrase = event.results[index][0].transcript.trim()
-        if (event.results[index].isFinal) quickConfirmedTextRef.current = `${quickConfirmedTextRef.current} ${phrase}`.trim()
-        else interimText += `${phrase} `
-      }
-      setQuickVoiceText(`${quickConfirmedTextRef.current} ${interimText}`.trim())
-    }
-    recognition.onerror = (event) => {
-      setRecording(false)
-      if (event.error !== 'aborted') setError('음성을 인식하지 못했습니다. 마이크 권한을 확인한 뒤 다시 시도해 주세요.')
-    }
-    recognition.onend = () => setRecording(false)
-    quickRecognitionRef.current = recognition
-    setError('')
-    setRecording(true)
-    recognition.start()
-  }
-
-  const stopQuickVoiceRequest = () => {
-    quickRecognitionRef.current?.stop()
-    setRecording(false)
-    navigate('request')
-  }
-
   const handleBottomNavigation = (destination) => {
-    if (recording) quickRecognitionRef.current?.abort()
-    setRecording(false)
     navigate(destination)
   }
 
@@ -388,8 +328,8 @@ export function RailLogisticsApp({ onExit, onNotify }) {
       <main ref={bodyRef} className={`rp-screen-body rp-screen-body--${view}`} tabIndex="-1" aria-label={`${header[0]} 화면`} aria-busy={busy}>
         {error && <div className="rp-connection-error" role="status">{error}</div>}
         {busy && view === 'request' && <div className="rp-loading-layer"><LoadingPanel /></div>}
-        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} recording={recording} quickVoiceText={quickVoiceText} onToggleRecording={recording ? stopQuickVoiceRequest : startQuickVoiceRequest} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
-        {view === 'request' && <RequestScreen onAnalyze={analyze} onExtract={extract} busy={busy} initialVoiceText={quickVoiceText} onInitialVoiceTextConsumed={() => setQuickVoiceText('')} />}
+        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
+        {view === 'request' && <RequestScreen onAnalyze={analyze} onExtract={extract} busy={busy} />}
         {view === 'proposals' && baseline && proposals.length > 0 && <ProposalsScreen baseline={baseline} proposals={proposals} onProceed={proceed} onCompare={(proposal) => { setSelectedProposal(proposal); navigate('compare') }} onReject={reject} onModify={() => navigate('request')} />}
         {view === 'compare' && baseline && selectedProposal && <ComparisonScreen baseline={baseline} proposals={proposals} initialProposal={selectedProposal} onBack={() => navigate('proposals')} onProceed={proceed} />}
         {view === 'pool' && selectedProposal && poolState && <PoolScreen proposal={selectedProposal} pool={poolState} network={network} onReview={() => navigate('review')} onModify={() => navigate('request')} onDisruption={() => navigate('disruption')} onCancel={openCancelDialog} busy={busy} />}
