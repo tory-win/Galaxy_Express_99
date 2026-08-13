@@ -64,6 +64,10 @@
 
 .rp-primary-button,
 .rp-secondary-button { width: 100%; }
+.rp-screen-body .rp-primary-button {
+  width: calc(100% - var(--kr-space-2));
+  justify-self: center;
+}
 .rp-text-button {
   min-height: var(--kr-control-height-sm);
   padding: 0 var(--kr-space-1);
