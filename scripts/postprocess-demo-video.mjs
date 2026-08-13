@@ -23,24 +23,22 @@ const cues = [
   {
     start: 5.3,
     end: 10,
-    text: 'RAILPOOL AI의 요청부터 검토까지\n핵심 흐름을 빠르게 보겠습니다.',
-    voice: '레일풀 에이아이의 요청부터 검토까지 핵심 흐름을 빠르게 보겠습니다.',
+    text: '레일물류의 요청부터 검토까지\n핵심 흐름을 빠르게 보겠습니다.',
   },
   {
     start: 10,
     end: 15,
-    text: '화물이 없는 게 아니라\n서로 맞는 조합을 찾지 못한 겁니다.',
+    text: '코레일 앱 홈의 레일물류 아이콘에서\n별도 설치 없이 바로 시작합니다.',
   },
   {
     start: 15,
     end: 22,
-    text: '코레일 앱의 레일물류 아이콘에서\n별도 설치 없이 바로 시작합니다.',
+    text: '화물이 없는 게 아니라\n서로 맞는 조합을 찾지 못한 겁니다.',
   },
   {
     start: 22,
     end: 28,
-    text: '전화로 받던 운송 조건을 말하면\nRAILPOOL AI가 항목별로 정리합니다.',
-    voice: '전화로 받던 운송 조건을 말하면 레일풀 에이아이가 항목별로 정리합니다.',
+    text: '전화로 받던 운송 조건을 말하면\n레일물류가 항목별로 정리합니다.',
   },
   {
     start: 28,
@@ -383,7 +381,7 @@ async function writeTextArtifacts(timings) {
 
   const timingByIndex = new Map(timings.map((timing) => [timing.index, timing]))
   const narration = [
-    '# RAILPOOL AI 시연 영상 내레이션',
+    '# 레일물류 시연 영상 내레이션',
     '',
     `- 음성: macOS 한국어 ${VOICE}`,
     `- 기본 속도: ${VOICE_RATE}`,
@@ -436,7 +434,7 @@ async function main() {
   await writeTextArtifacts(narration.timings)
 
   const result = {
-    title: 'RAILPOOL AI 시연 영상',
+    title: '레일물류 시연 영상',
     outputPath: path.relative(process.cwd(), outputPath),
     baseVideo: path.relative(process.cwd(), BASE_VIDEO),
     duration: probeDuration(outputPath),
