@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { formatManWon } from '../demoData.js'
-import { ConfidenceBadge, Icon, LegalNotice, PrimaryButton, SecondaryButton, StatusPill } from '../components.jsx'
+import { ConfidenceBadge, Icon, LegalNotice, PrimaryButton, SecondaryButton, StatusPill, TertiaryButton } from '../components.jsx'
 
 export function PoolScreen({ proposal, pool, network, onReview, onModify, onDisruption, onCancel }) {
   const [flash, setFlash] = useState(false)
@@ -75,7 +75,7 @@ export function PoolScreen({ proposal, pool, network, onReview, onModify, onDisr
       <p className="rp-no-charge"><Icon name="check" size={14} /> 목표 물량에 미달하면 자동 취소되며 비용은 발생하지 않습니다.</p>
       <button type="button" className="rp-disruption-link" onClick={onDisruption}><Icon name="alert" size={16} /> 최근 참여·이탈 내역 보기</button>
 
-      <div className="rp-pool-actions"><PrimaryButton disabled={!filled} onClick={onReview}>{filled ? '코레일에 검토 요청 보내기' : `목표 달성까지 ${pool.targetTeu - pool.currentTeu}TEU 남음`}</PrimaryButton><SecondaryButton onClick={onModify}>내 조건 수정</SecondaryButton><button type="button" className="rp-cancel-button" onClick={onCancel}>이 계획 취소하기</button></div>
+      <div className="rp-pool-actions"><SecondaryButton onClick={onModify}>내 조건 수정</SecondaryButton><PrimaryButton disabled={!filled} onClick={onReview}>{filled ? '코레일에 검토 요청 보내기' : `목표 달성까지 ${pool.targetTeu - pool.currentTeu}TEU 남음`}</PrimaryButton><TertiaryButton onClick={onCancel}>이 계획 취소하기</TertiaryButton></div>
       <LegalNotice />
     </div>
   )

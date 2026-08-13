@@ -631,3 +631,143 @@
   .rp-review-actions { display: none !important; }
   .rp-screen-body { position: static; overflow: visible; }
 }
+
+/* RAILPOOL mobile visual system: public-service clarity with one-action hierarchy */
+.rp-app { letter-spacing: -0.2px; }
+.rp-dashboard,
+.rp-request-screen,
+.rp-proposals-screen,
+.rp-comparison-screen,
+.rp-pool-screen,
+.rp-disruption-screen,
+.rp-review-screen { padding-right: var(--kr-space-5); padding-left: var(--kr-space-5); }
+
+.rp-app .kr-button {
+  min-width: 44px;
+  min-height: 52px;
+  padding: 0 var(--kr-space-4);
+  border-radius: var(--kr-radius-control);
+  box-shadow: none;
+  font-size: var(--kr-font-11);
+  font-weight: var(--kr-weight-semibold);
+  line-height: 1.5;
+}
+.rp-app .kr-button--primary { border: 0; background: var(--kr-color-brand); color: var(--kr-color-on-brand); }
+.rp-app .kr-button--primary:active { background: var(--kr-color-brand-strong); }
+.rp-app .kr-button--secondary { border: 1px solid var(--kr-color-line-strong); background: var(--kr-color-surface); color: var(--kr-color-ink); }
+.rp-app .kr-button--secondary:active,
+.rp-app .kr-button--ghost:active { background: var(--kr-color-canvas-strong); }
+.rp-app .kr-button--ghost,
+.rp-tertiary-button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--kr-color-muted);
+  text-decoration: none;
+}
+.rp-app .kr-button:disabled {
+  border: 0;
+  background: var(--kr-color-line);
+  color: var(--kr-color-subtle);
+  opacity: 1;
+}
+.rp-app .kr-icon-button,
+.rp-modal-close {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--kr-color-muted);
+  box-shadow: none;
+}
+
+.rp-confidence {
+  height: 24px;
+  min-height: 24px;
+  padding: 0 var(--kr-space-2);
+  border-radius: 6px;
+  background: var(--kr-color-brand-soft);
+  color: var(--kr-color-brand);
+  font-size: 12px;
+  font-weight: var(--kr-weight-regular);
+}
+.rp-confidence--verified { background: var(--kr-color-brand-soft); color: var(--kr-color-brand); }
+.rp-confidence--estimated,
+.rp-confidence--refresh { border: 1px solid var(--kr-color-warning); background: var(--kr-color-surface); color: var(--kr-color-warning); }
+.rp-confidence.is-compact { min-height: 24px; padding: 0 var(--kr-space-2); }
+
+.rp-request-filters button,
+.rp-axis-options button,
+.rp-reason-grid button {
+  min-width: 44px;
+  min-height: 38px;
+  padding: 0 var(--kr-space-4);
+  border: 0;
+  border-radius: var(--kr-radius-pill);
+  background: var(--kr-color-canvas-strong);
+  color: var(--kr-color-muted);
+  font-size: var(--kr-font-10);
+  font-weight: var(--kr-weight-semibold);
+}
+.rp-request-filters button.is-active,
+.rp-axis-options button.is-active,
+.rp-reason-grid button[aria-pressed='true'] { border: 1px solid var(--kr-color-brand); background: var(--kr-color-brand-soft); color: var(--kr-color-brand); }
+
+.rp-hero-card,
+.rp-network-card,
+.rp-eco-points,
+.rp-request-card,
+.rp-paste-card,
+.rp-extracted-summary,
+.rp-optional-fields,
+.rp-axis-card,
+.rp-confirm-card,
+.rp-open-axes,
+.rp-proposal-card,
+.rp-pool-progress,
+.rp-pool-economics,
+.rp-participant-section,
+.rp-plan-summary,
+.rp-live-summary,
+.rp-event-feed,
+.rp-review-section,
+.rp-review-contact,
+.rp-next-steps { padding: var(--kr-space-5); border: 1px solid var(--kr-color-line); border-radius: var(--kr-radius-card); background: var(--kr-color-surface); box-shadow: none; }
+
+.rp-section-heading h2,
+.rp-hero-card h1,
+.rp-review-complete > h1 { font-size: var(--kr-font-20); font-weight: var(--kr-weight-bold); line-height: 1.5; }
+.rp-proposal-card__summary,
+.rp-analysis-explainer strong,
+.rp-impact-card h2 { color: var(--kr-color-ink); font-size: var(--kr-font-12); font-weight: var(--kr-weight-semibold); line-height: 1.5; }
+.rp-app p,
+.rp-app dd,
+.rp-app li { line-height: 1.5; }
+.rp-app time,
+.rp-app dd,
+.rp-app strong,
+.rp-progress-numbers { font-variant-numeric: tabular-nums; }
+
+.rp-proposal-actions,
+.rp-pool-actions,
+.rp-review-actions,
+.rp-recovery-actions,
+.rp-sticky-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: var(--kr-space-2); }
+.rp-proposal-actions .rp-tertiary-button,
+.rp-pool-actions .rp-tertiary-button { grid-column: 1 / -1; }
+.rp-pool-actions .rp-primary-button { grid-column: auto; }
+.rp-sticky-actions,
+.rp-review-actions {
+  border-top: 1px solid var(--kr-color-line);
+  background: var(--kr-color-surface);
+  box-shadow: none;
+}
+.rp-segmented button.is-active,
+.rp-compare-switcher button.is-active,
+.rp-proposal-switcher button.is-active { box-shadow: none; }
+.rp-station-options,
+.rp-modal,
+.rp-complete-mark { box-shadow: none; }

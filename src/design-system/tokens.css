@@ -1,15 +1,15 @@
 :root {
   /* Korail+ color system */
-  --kr-color-brand: #1b72f4;
-  --kr-color-brand-strong: #0869eb;
-  --kr-color-brand-soft: #eef5ff;
-  --kr-color-ink: #202127;
-  --kr-color-body: #3a3d45;
-  --kr-color-muted: #8b8e97;
-  --kr-color-subtle: #a6a8b0;
-  --kr-color-line: #e6e7eb;
-  --kr-color-line-strong: #c9cbd1;
-  --kr-color-canvas: #f8f7fc;
+  --kr-color-brand: #1769d2;
+  --kr-color-brand-strong: #145cb8;
+  --kr-color-brand-soft: #e8f0fb;
+  --kr-color-ink: #1a1d21;
+  --kr-color-body: #1a1d21;
+  --kr-color-muted: #6b7280;
+  --kr-color-subtle: #b0b5bc;
+  --kr-color-line: #e5e7eb;
+  --kr-color-line-strong: #d1d5db;
+  --kr-color-canvas: #f7f8fa;
   --kr-color-surface: #ffffff;
   --kr-color-positive: #19b36b;
   --kr-color-positive-strong: #087d55;
@@ -21,19 +21,19 @@
   --kr-color-danger-soft: #fff0f0;
   --kr-color-brand-deep: #0b3f91;
   --kr-color-brand-ink: #11284d;
-  --kr-color-canvas-strong: #f1f3f7;
+  --kr-color-canvas-strong: #f3f4f6;
   --kr-color-overlay: rgba(18, 30, 50, 0.42);
   --kr-color-on-brand: #ffffff;
 
   /* Type */
   --kr-font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
-  --kr-font-10: 10px;
-  --kr-font-11: 11px;
-  --kr-font-12: 12px;
+  --kr-font-10: 13px;
+  --kr-font-11: 15px;
+  --kr-font-12: 17px;
   --kr-font-13: 13px;
-  --kr-font-14: 14px;
-  --kr-font-16: 16px;
-  --kr-font-18: 18px;
+  --kr-font-14: 17px;
+  --kr-font-16: 17px;
+  --kr-font-18: 20px;
   --kr-font-20: 20px;
   --kr-font-24: 24px;
   --kr-weight-regular: 400;
@@ -51,19 +51,19 @@
   --kr-space-8: 32px;
 
   /* Shape and elevation */
-  --kr-radius-control: 8px;
-  --kr-radius-card: 11px;
+  --kr-radius-control: 12px;
+  --kr-radius-card: 16px;
   --kr-radius-sheet: 24px;
   --kr-radius-pill: 999px;
-  --kr-radius-feature: 18px;
-  --kr-shadow-card: 0 5px 16px rgba(35, 42, 62, 0.075);
-  --kr-shadow-control: 0 3px 10px rgba(27, 114, 244, 0.09);
-  --kr-shadow-raised: 0 12px 30px rgba(35, 42, 62, 0.14);
+  --kr-radius-feature: 16px;
+  --kr-shadow-card: none;
+  --kr-shadow-control: none;
+  --kr-shadow-raised: none;
 
   /* Controls */
-  --kr-control-height-sm: 32px;
-  --kr-control-height-md: 40px;
-  --kr-control-height-lg: 44px;
+  --kr-control-height-sm: 38px;
+  --kr-control-height-md: 44px;
+  --kr-control-height-lg: 52px;
 
   /* Motion */
   --kr-motion-fast: 140ms;
