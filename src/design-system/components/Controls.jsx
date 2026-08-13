@@ -82,3 +82,40 @@ export function ProductCard({ title, description, details, icon }) {
     </article>
   )
 }
+
+export function Button({ children, onClick, disabled = false, className = '', type = 'button', variant = 'primary' }) {
+  return <button type={type} className={`kr-button kr-button--${variant} ${className}`} disabled={disabled} onClick={onClick}>{children}</button>
+}
+
+export function IconButton({ children, label, onClick, className = '', badge = 0 }) {
+  return (
+    <button type="button" className={`kr-icon-button ${className}`} aria-label={label} onClick={onClick}>
+      {children}
+      {badge > 0 && <i>{badge}</i>}
+    </button>
+  )
+}
+
+export function StatusPill({ children, tone = 'brand', className = '' }) {
+  return <span className={`kr-status-pill kr-status-pill--${tone} ${className}`}>{children}</span>
+}
+
+export function SectionHeading({ eyebrow, title, aside, className = '' }) {
+  return <div className={`kr-section-heading ${className}`}><div>{eyebrow && <span>{eyebrow}</span>}<h2>{title}</h2></div>{aside}</div>
+}
+
+export function SubBottomNav({ items, active, onChange, className = '' }) {
+  return (
+    <nav className={`kr-sub-bottom-nav ${className}`} aria-label="화면 메뉴">
+      {items.map((item) => {
+        const selected = item.id === active
+        return (
+          <button type="button" key={item.id} className={selected ? 'is-active' : ''} aria-current={selected ? 'page' : undefined} onClick={() => onChange(item.id)}>
+            <span>{item.icon}{item.badge > 0 && <i>{item.badge}</i>}</span>
+            <b>{item.label}</b>
+          </button>
+        )
+      })}
+    </nav>
+  )
+}

@@ -35,23 +35,25 @@ async function expectUsableLayout(page) {
   expect(audit.tinyText).toEqual([])
 }
 
-test('Korail entry opens the complete Rail Logistics demo flow', async ({ page }) => {
+test('Korail entry opens the complete live Rail Logistics flow', async ({ page }) => {
+  test.setTimeout(90_000)
   await page.goto('./')
   await expect(page.getByRole('button', { name: '레일물류' })).toBeVisible()
   await capture(page, '01-korail-entry')
 
   await page.getByRole('button', { name: '레일물류' }).click()
-  await expect(page.getByRole('heading', { name: /철도가 유리해지는 조건/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /화물 조건을 등록하고/ })).toBeVisible()
+  await expect(page.getByText('10/10', { exact: true })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByText(/공공데이터 \d+종 실시간 연결/)).toHaveCount(0)
   await expect(page.getByText('확정 자료와 가상 물량을 구분해 표시하는 시연 환경')).toHaveCount(0)
   await expect(page).toHaveURL(/#rail-logistics$/)
   await expectUsableLayout(page)
   await capture(page, '02-railpool-dashboard')
 
-  await page.getByRole('button', { name: /새 화물 보내기/ }).first().click()
+  await page.getByRole('button', { name: /새 화물 추가하기/ }).first().click()
   await expect(page.locator('.rp-form-actions')).toHaveCount(0)
-  await page.getByRole('button', { name: '시연용 메일 불러오기' }).click()
-  await page.getByRole('button', { name: 'AI로 조건 자동 인식' }).click()
+  await page.getByRole('button', { name: '예시 메일 불러오기' }).click()
+  await page.getByRole('button', { name: '조건 자동 입력' }).click()
   await expect(page.getByText('6개 필수 항목을 인식했습니다')).toBeVisible({ timeout: 15_000 })
 
   await page.getByRole('button', { name: '인식 결과 확인·수정' }).click()
@@ -64,17 +66,17 @@ test('Korail entry opens the complete Rail Logistics demo flow', async ({ page }
   await page.getByRole('button', { name: '다음' }).click()
   await expect(page.getByRole('heading', { name: '이 조건으로 방법을 찾을게요' })).toBeVisible()
 
-  await page.getByRole('button', { name: 'AI에게 방법 물어보기' }).click()
-  await expect(page.getByText('출발일을 하루만 옮기시면', { exact: false }).first()).toBeVisible()
+  await page.getByRole('button', { name: '운송 방법 찾기' }).click()
+  await expect(page.getByText(/현재 계획보다/).first()).toBeVisible()
   await expect(page.getByText(/KORAIL·ODCloud 공공데이터/)).toHaveCount(0)
   await expect(page.getByText('화차 채움 최적화', { exact: true })).toBeVisible()
   await expectUsableLayout(page)
-  await capture(page, '03-ai-counterproposal')
+  await capture(page, '03-transport-proposals')
 
   const rejectButton = page.getByRole('button', { name: '거절하고 다른 제안 보기' }).first()
   await rejectButton.focus()
   await rejectButton.press('Enter')
-  const rejectionDialog = page.getByRole('dialog', { name: '어떤 점이 어려우셨나요?' })
+  const rejectionDialog = page.getByRole('dialog', { name: '어떤 조건을 바꾸기 힘드신가요?' })
   await expect(rejectionDialog).toBeVisible()
   await expect(page.getByRole('button', { name: '거절 사유 선택 닫기' })).toBeFocused()
   await page.keyboard.press('Escape')
@@ -87,12 +89,15 @@ test('Korail entry opens the complete Rail Logistics demo flow', async ({ page }
   await page.getByRole('button', { name: '돌아가기', exact: true }).click()
 
   await page.getByRole('button', { name: '이 제안으로 진행' }).first().click()
-  await expect(page.getByRole('heading', { name: '3TEU만 더 모이면 확정' })).toBeVisible()
-  await page.getByRole('button', { name: /B사 3TEU 등록 시연/ }).click()
-  await expect(page.getByRole('heading', { name: '목표 물량을 채웠어요' })).toBeVisible()
-  await expect(page.getByText('32,500원 더 낮아짐')).toBeVisible()
+  await expect(page.getByText(/곳에서 실시간 확인 중/)).toBeVisible()
+  await expect(page.getByRole('heading', { name: '목표 물량을 채웠어요' })).toBeVisible({ timeout: 45_000 })
+  await expect(page.locator('.rp-participant-list article')).toHaveCount(5)
   await expectUsableLayout(page)
   await capture(page, '04-pool-target-reached')
+
+  await page.reload()
+  await expect(page.getByRole('heading', { name: '목표 물량을 채웠어요' })).toBeVisible({ timeout: 15_000 })
+  await expect(page).toHaveURL(/#rail-logistics$/)
 
   await page.getByRole('button', { name: '코레일에 검토 요청 보내기' }).click()
   await expect(page.getByText('이 단계는 예약이 아닙니다', { exact: true })).toBeVisible()
@@ -104,9 +109,9 @@ test('Korail entry opens the complete Rail Logistics demo flow', async ({ page }
 
 test('refresh keeps the Rail Logistics context instead of resetting to Korail home', async ({ page }) => {
   await page.goto('./#rail-logistics')
-  await expect(page.getByRole('heading', { name: /철도가 유리해지는 조건/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /화물 조건을 등록하고/ })).toBeVisible()
   await page.reload()
-  await expect(page.getByRole('heading', { name: /철도가 유리해지는 조건/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /화물 조건을 등록하고/ })).toBeVisible()
   await expect(page).toHaveURL(/#rail-logistics$/)
 })
 
@@ -114,7 +119,7 @@ test('320px layout keeps readable spacing without overflow or undersized control
   await page.setViewportSize({ width: 320, height: 700 })
   await page.goto('./')
   await page.getByRole('button', { name: '레일물류' }).click()
-  await expect(page.getByRole('heading', { name: /철도가 유리해지는 조건/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /화물 조건을 등록하고/ })).toBeVisible()
   await expectUsableLayout(page)
 
   const gap = await page.evaluate(() => {

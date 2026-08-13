@@ -29,7 +29,7 @@ export async function getPublicDataStatus() {
   if (!serviceKey) {
     return {
       configured: false,
-      mode: 'demo_snapshot',
+      mode: 'not_configured',
       datasets: DATASETS.map((dataset) => ({ ...dataset, status: 'not_configured' })),
       note: 'API 키는 서버 환경변수에만 설정하며 브라우저나 저장소에 노출하지 않습니다.',
     }

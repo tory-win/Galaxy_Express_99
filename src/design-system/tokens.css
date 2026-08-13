@@ -12,6 +12,18 @@
   --kr-color-canvas: #f8f7fc;
   --kr-color-surface: #ffffff;
   --kr-color-positive: #19b36b;
+  --kr-color-positive-strong: #087d55;
+  --kr-color-positive-soft: #eaf8f2;
+  --kr-color-warning: #c96b17;
+  --kr-color-warning-strong: #8c4c16;
+  --kr-color-warning-soft: #fff3e8;
+  --kr-color-danger: #dc4545;
+  --kr-color-danger-soft: #fff0f0;
+  --kr-color-brand-deep: #0b3f91;
+  --kr-color-brand-ink: #11284d;
+  --kr-color-canvas-strong: #f1f3f7;
+  --kr-color-overlay: rgba(18, 30, 50, 0.42);
+  --kr-color-on-brand: #ffffff;
 
   /* Type */
   --kr-font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
@@ -23,6 +35,7 @@
   --kr-font-16: 16px;
   --kr-font-18: 18px;
   --kr-font-20: 20px;
+  --kr-font-24: 24px;
   --kr-weight-regular: 400;
   --kr-weight-medium: 500;
   --kr-weight-semibold: 650;
@@ -42,8 +55,15 @@
   --kr-radius-card: 11px;
   --kr-radius-sheet: 24px;
   --kr-radius-pill: 999px;
+  --kr-radius-feature: 18px;
   --kr-shadow-card: 0 5px 16px rgba(35, 42, 62, 0.075);
   --kr-shadow-control: 0 3px 10px rgba(27, 114, 244, 0.09);
+  --kr-shadow-raised: 0 12px 30px rgba(35, 42, 62, 0.14);
+
+  /* Controls */
+  --kr-control-height-sm: 32px;
+  --kr-control-height-md: 40px;
+  --kr-control-height-lg: 44px;
 
   /* Motion */
   --kr-motion-fast: 140ms;

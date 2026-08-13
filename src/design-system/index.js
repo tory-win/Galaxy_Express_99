@@ -8,6 +8,11 @@ export {
   SearchField,
   MenuRow,
   ProductCard,
+  Button,
+  IconButton,
+  StatusPill,
+  SectionHeading,
+  SubBottomNav,
 } from './components/Controls.jsx'
 export { StatusBar } from './components/StatusBar.jsx'
 export * from './components/icons.jsx'

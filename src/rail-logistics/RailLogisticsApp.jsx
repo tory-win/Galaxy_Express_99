@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  acceptDisruptionProposal,
   createAndAnalyzeFreightRequest,
   extractFreightConditions,
+  getFreightRequest,
+  getPoolSnapshot,
+  getRailpoolNetwork,
   listFreightRequests,
   saveProposalDecision,
   submitReviewRequest,
-  triggerDemoFill,
+  subscribeRailpoolEvents,
 } from './api.js'
-import { DEMO_REQUEST, PROPOSALS } from './demoData.js'
 import { LoadingPanel, RailBottomNav, RailHeader } from './components.jsx'
 import { ComparisonScreen } from './screens/ComparisonScreen.jsx'
 import { DashboardScreen } from './screens/DashboardScreen.jsx'
@@ -20,30 +21,42 @@ import { ReviewScreen } from './screens/ReviewScreen.jsx'
 import './rail-logistics.css'
 
 const TITLES = {
-  dashboard: ['RAILPOOL AI', '레일물류'],
+  dashboard: ['레일물류', 'KORAIL+'],
   request: ['새 운송 요청', '레일물류'],
-  proposals: ['AI 역제안', 'RAILPOOL AI'],
-  compare: ['제안 비교', 'RAILPOOL AI'],
+  proposals: ['운송 제안', '레일물류'],
+  compare: ['제안 비교', '레일물류'],
   pool: ['함께 보내기', '레일물류'],
   disruption: ['변동 알림', '레일물류'],
   review: ['코레일 검토 요청', '레일물류'],
 }
+
+const EMPTY_NETWORK = { totalAgents: 0, activeAgents: 0, agents: [], recentEvents: [] }
 
 function readSavedView() {
   const saved = window.sessionStorage.getItem('railpool:view')
   return TITLES[saved] ? saved : 'dashboard'
 }
 
+function readSavedRequestId() {
+  return window.sessionStorage.getItem('railpool:requestId') ?? ''
+}
+
 export function RailLogisticsApp({ onExit, onNotify }) {
   const [view, setView] = useState(readSavedView)
-  const [requests, setRequests] = useState([DEMO_REQUEST])
-  const [requestId, setRequestId] = useState(DEMO_REQUEST.id)
-  const [proposals, setProposals] = useState(PROPOSALS)
-  const [selectedProposal, setSelectedProposal] = useState(PROPOSALS[0])
-  const [currentTeu, setCurrentTeu] = useState(15)
-  const [targetTeu] = useState(18)
+  const [requests, setRequests] = useState([])
+  const [requestId, setRequestId] = useState(readSavedRequestId)
+  const [requestInput, setRequestInput] = useState({})
+  const [baseline, setBaseline] = useState(null)
+  const [proposals, setProposals] = useState([])
+  const [selectedProposal, setSelectedProposal] = useState(null)
+  const [poolState, setPoolState] = useState(null)
+  const [network, setNetwork] = useState(EMPTY_NETWORK)
+  const [liveStatus, setLiveStatus] = useState('connecting')
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
   const bodyRef = useRef(null)
+  const activePoolRef = useRef('')
+  const refreshTimerRef = useRef(null)
 
   const navigate = (nextView) => {
     const normalized = nextView === 'notifications' ? 'disruption' : nextView
@@ -51,13 +64,87 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     window.sessionStorage.setItem('railpool:view', normalized)
   }
 
+  const rememberRequest = (id) => {
+    setRequestId(id)
+    window.sessionStorage.setItem('railpool:requestId', id)
+  }
+
+  const refreshRequests = async () => {
+    const result = await listFreightRequests()
+    setRequests(result.requests ?? [])
+  }
+
+  const refreshPool = async (id = activePoolRef.current) => {
+    if (!id) return
+    const result = await getPoolSnapshot(id)
+    setPoolState(result.pool)
+  }
+
+  const scheduleLiveRefresh = (event) => {
+    window.clearTimeout(refreshTimerRef.current)
+    refreshTimerRef.current = window.setTimeout(async () => {
+      try {
+        const tasks = [getRailpoolNetwork(), listFreightRequests()]
+        if (activePoolRef.current && (!event.requestId || event.requestId === activePoolRef.current)) tasks.push(getPoolSnapshot(activePoolRef.current))
+        const [nextNetwork, nextRequests, nextPool] = await Promise.all(tasks)
+        setNetwork(nextNetwork)
+        setRequests(nextRequests.requests ?? [])
+        if (nextPool?.pool) setPoolState(nextPool.pool)
+        setError('')
+      } catch (refreshError) {
+        setError(refreshError.message)
+      }
+    }, 180)
+  }
+
   useEffect(() => {
     let active = true
-    listFreightRequests().then((result) => {
-      if (!active) return
-      setRequests(result.requests?.length ? result.requests : [DEMO_REQUEST])
+    const savedView = readSavedView()
+    const savedRequestId = readSavedRequestId()
+    const shouldRestoreRequest = savedRequestId && ['proposals', 'compare', 'pool', 'review'].includes(savedView)
+    Promise.all([
+      listFreightRequests(),
+      getRailpoolNetwork(),
+      shouldRestoreRequest ? getFreightRequest(savedRequestId) : Promise.resolve(null),
+    ])
+      .then(([requestResult, networkResult, savedRequest]) => {
+        if (!active) return
+        setRequests(requestResult.requests ?? [])
+        setNetwork(networkResult)
+        if (savedRequest) {
+          setRequestInput(savedRequest.requestInput ?? {})
+          setBaseline(savedRequest.baseline)
+          setProposals(savedRequest.proposals ?? [])
+          setSelectedProposal(savedRequest.proposals?.[0] ?? null)
+          if (savedRequest.pool) {
+            activePoolRef.current = savedRequestId
+            setPoolState(savedRequest.pool)
+          } else if (['pool', 'review'].includes(savedView)) {
+            navigate('proposals')
+          }
+        }
+        setError('')
+      })
+      .catch((initialError) => active && setError(initialError.message))
+
+    const unsubscribe = subscribeRailpoolEvents({
+      onConnected: () => active && setLiveStatus('live'),
+      onEvent: (event) => {
+        if (!active) return
+        if (event.network) setNetwork(event.network)
+        scheduleLiveRefresh(event)
+      },
+      onError: (streamError) => {
+        if (!active) return
+        setLiveStatus('reconnecting')
+        setError(streamError.message)
+      },
     })
-    return () => { active = false }
+    return () => {
+      active = false
+      unsubscribe()
+      window.clearTimeout(refreshTimerRef.current)
+    }
   }, [])
 
   useEffect(() => {
@@ -67,11 +154,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
   }, [view])
 
   const header = TITLES[view] ?? TITLES.dashboard
-  const activeTab = useMemo(() => {
-    if (view === 'request') return 'request'
-    if (view === 'disruption') return 'notifications'
-    return 'dashboard'
-  }, [view])
+  const activeTab = useMemo(() => view === 'request' ? 'request' : view === 'disruption' ? 'notifications' : 'dashboard', [view])
 
   const goBack = () => {
     if (view === 'dashboard') return onExit()
@@ -80,10 +163,36 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     navigate('dashboard')
   }
 
+  const loadRequest = async (request, destinationView) => {
+    setBusy(true)
+    setError('')
+    try {
+      const result = await getFreightRequest(request.id)
+      rememberRequest(request.id)
+      setRequestInput(result.requestInput ?? {})
+      setBaseline(result.baseline)
+      setProposals(result.proposals ?? [])
+      setSelectedProposal(result.proposals?.[0] ?? null)
+      if (result.pool) {
+        activePoolRef.current = request.id
+        setPoolState(result.pool)
+      }
+      navigate(destinationView ?? (result.pool ? 'pool' : 'proposals'))
+    } catch (loadError) {
+      setError(loadError.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const extract = async (text) => {
     setBusy(true)
+    setError('')
     try {
       return await extractFreightConditions(text)
+    } catch (extractError) {
+      setError(extractError.message)
+      throw extractError
     } finally {
       setBusy(false)
     }
@@ -91,78 +200,103 @@ export function RailLogisticsApp({ onExit, onNotify }) {
 
   const analyze = async (form) => {
     setBusy(true)
+    setError('')
     try {
-      const [result] = await Promise.all([
-        createAndAnalyzeFreightRequest(form),
-        new Promise((resolve) => window.setTimeout(resolve, 1_050)),
-      ])
-      setRequestId(result.request?.id ?? DEMO_REQUEST.id)
-      setProposals(result.proposals?.length ? result.proposals : PROPOSALS)
-      setSelectedProposal(result.proposals?.[0] ?? PROPOSALS[0])
+      const result = await createAndAnalyzeFreightRequest(form)
+      rememberRequest(result.request.id)
+      setRequestInput(form)
+      setBaseline(result.baseline)
+      setProposals(result.proposals ?? [])
+      setSelectedProposal(result.proposals?.[0] ?? null)
+      await refreshRequests()
       navigate('proposals')
+    } catch (analyzeError) {
+      setError(analyzeError.message)
     } finally {
       setBusy(false)
     }
   }
 
   const proceed = async (proposal) => {
-    setSelectedProposal(proposal)
-    setCurrentTeu(15)
-    await saveProposalDecision(requestId, proposal.id, 'accepted')
-    navigate('pool')
-  }
-
-  const reject = async (proposal, reason) => {
-    await saveProposalDecision(requestId, proposal.id, 'rejected', reason)
-    setProposals((items) => [...items.slice(1), items[0]])
-    onNotify?.(`${reason} 조건을 잠그고 다시 계산했습니다`)
-  }
-
-  const fillPool = async () => {
     setBusy(true)
+    setError('')
     try {
-      const result = await triggerDemoFill(requestId)
-      setCurrentTeu(result.currentTeu ?? 18)
+      const result = await saveProposalDecision(requestId, proposal.id, 'accepted')
+      setSelectedProposal(proposal)
+      activePoolRef.current = requestId
+      setPoolState(result.pool)
+      navigate('pool')
+    } catch (decisionError) {
+      setError(decisionError.message)
     } finally {
       setBusy(false)
     }
   }
 
-  const acceptDisruption = async () => {
-    setBusy(true)
+  const reject = async (proposal, reason) => {
     try {
-      const result = await acceptDisruptionProposal(requestId)
-      setCurrentTeu(result.currentTeu ?? 15)
-      navigate('pool')
-    } finally {
-      setBusy(false)
+      await saveProposalDecision(requestId, proposal.id, 'rejected', reason)
+      setProposals((items) => [...items.slice(1), items[0]])
+      onNotify?.(`${reason} 의견을 저장하고 다른 제안을 보여드립니다`)
+    } catch (rejectError) {
+      setError(rejectError.message)
     }
   }
 
   const submitReview = async (payload) => {
     setBusy(true)
+    setError('')
     try {
       return await submitReviewRequest(requestId, payload)
+    } catch (reviewError) {
+      setError(reviewError.message)
+      throw reviewError
     } finally {
       setBusy(false)
     }
   }
 
+  const cancelPlan = async () => {
+    if (!window.confirm('함께 보내기 참여를 취소할까요? 출발 전에는 비용 없이 취소할 수 있습니다.')) return
+    setBusy(true)
+    try {
+      await saveProposalDecision(requestId, selectedProposal.id, 'cancelled', '사용자 취소')
+      setPoolState(null)
+      activePoolRef.current = ''
+      window.sessionStorage.removeItem('railpool:requestId')
+      await refreshRequests()
+      onNotify?.('함께 보내기 참여를 취소했습니다')
+      navigate('dashboard')
+    } catch (cancelError) {
+      setError(cancelError.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const openPoolFromAlert = async () => {
+    const relatedId = network.recentEvents?.find((event) => event.requestId)?.requestId || requestId
+    const relatedRequest = requests.find((item) => item.id === relatedId)
+    if (relatedRequest) await loadRequest(relatedRequest, 'pool')
+    else navigate('dashboard')
+  }
+
   return (
     <div className="rp-app">
-      <span className="rp-sr-only" aria-live="polite" aria-atomic="true">{header[0]} 화면</span>
-      <RailHeader title={header[0]} eyebrow={header[1]} onBack={goBack} onNotifications={() => navigate('disruption')} />
+      <span className="rp-sr-only" aria-live="polite" aria-atomic="true">{header[0]} 화면 · {liveStatus === 'live' ? '실시간 연결됨' : '연결 확인 중'}</span>
+      <RailHeader title={header[0]} eyebrow={header[1]} onBack={goBack} onNotifications={() => navigate('disruption')} unread={network.recentEvents?.some((event) => event.type === 'pool_left') ? 1 : 0} />
       <main ref={bodyRef} className={`rp-screen-body rp-screen-body--${view}`} tabIndex="-1" aria-label={`${header[0]} 화면`} aria-busy={busy}>
+        {error && <div className="rp-connection-error" role="status">{error}</div>}
         {busy && view === 'request' && <div className="rp-loading-layer"><LoadingPanel /></div>}
-        {view === 'dashboard' && <DashboardScreen requests={requests} onNewRequest={() => navigate('request')} onOpenRequest={() => navigate('proposals')} onOpenPool={() => navigate('pool')} onOpenNotifications={() => navigate('disruption')} />}
+        {view === 'dashboard' && <DashboardScreen requests={requests} network={network} liveStatus={liveStatus} busy={busy} onNewRequest={() => navigate('request')} onOpenRequest={(request) => loadRequest(request)} onOpenPool={(request) => loadRequest(request, 'pool')} onOpenNotifications={() => navigate('disruption')} />}
         {view === 'request' && <RequestScreen onAnalyze={analyze} onExtract={extract} busy={busy} />}
-        {view === 'proposals' && <ProposalsScreen proposals={proposals} onProceed={proceed} onCompare={(proposal) => { setSelectedProposal(proposal); navigate('compare') }} onReject={reject} onModify={() => navigate('request')} />}
-        {view === 'compare' && <ComparisonScreen proposals={proposals} initialProposal={selectedProposal} onBack={() => navigate('proposals')} onProceed={proceed} />}
-        {view === 'pool' && <PoolScreen proposal={selectedProposal} currentTeu={currentTeu} targetTeu={targetTeu} onFill={fillPool} onReview={() => navigate('review')} onModify={() => navigate('request')} onDisruption={() => navigate('disruption')} busy={busy} />}
-        {view === 'disruption' && <DisruptionScreen onAccept={acceptDisruption} onCompare={() => navigate('compare')} onLeave={() => navigate('dashboard')} busy={busy} />}
-        {view === 'review' && <ReviewScreen requestId={requestId} proposal={selectedProposal} onSubmit={submitReview} onDone={() => navigate('dashboard')} busy={busy} />}
+        {view === 'proposals' && baseline && proposals.length > 0 && <ProposalsScreen baseline={baseline} proposals={proposals} onProceed={proceed} onCompare={(proposal) => { setSelectedProposal(proposal); navigate('compare') }} onReject={reject} onModify={() => navigate('request')} />}
+        {view === 'compare' && baseline && selectedProposal && <ComparisonScreen baseline={baseline} proposals={proposals} initialProposal={selectedProposal} onBack={() => navigate('proposals')} onProceed={proceed} />}
+        {view === 'pool' && selectedProposal && poolState && <PoolScreen proposal={selectedProposal} pool={poolState} network={network} onReview={() => navigate('review')} onModify={() => navigate('request')} onDisruption={() => navigate('disruption')} onCancel={cancelPlan} busy={busy} />}
+        {view === 'disruption' && <DisruptionScreen network={network} pool={poolState} onOpenPool={openPoolFromAlert} onLeave={() => navigate('dashboard')} />}
+        {view === 'review' && selectedProposal && <ReviewScreen requestId={requestId} requestInput={requestInput} pool={poolState} proposal={selectedProposal} onSubmit={submitReview} onDone={() => navigate('dashboard')} busy={busy} />}
       </main>
-      <RailBottomNav active={activeTab} onNavigate={navigate} />
+      <RailBottomNav active={activeTab} unread={network.recentEvents?.some((event) => event.type === 'pool_left') ? 1 : 0} onNavigate={navigate} />
     </div>
   )
 }

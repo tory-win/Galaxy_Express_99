@@ -1,10 +1,22 @@
 import express from 'express'
 import { randomUUID } from 'node:crypto'
 import { closeDatabase, databaseHealth, pool } from './db.js'
-import { buildProposals, extractConditionsFromText, validateFreightRequest } from './demo-engine.js'
+import { buildBaseline, buildProposals, extractConditionsFromText, validateFreightRequest } from './demo-engine.js'
 import { extractWithAi } from './ai-client.js'
 import { formatDepartureDate, formatTeu } from './presentation.js'
 import { getPublicDataStatus } from './public-data.js'
+import { ensureSchema } from './schema.js'
+import { initializeAgentAuth, requireAgentAuth } from './agent-auth.js'
+import {
+  getActivePoolAssignment,
+  getNetworkPlanningContext,
+  getNetworkSnapshot,
+  heartbeatAgent,
+  performAgentAction,
+  registerAgent,
+} from './agent-service.js'
+import { getPoolSnapshot, recalculatePool } from './pool-service.js'
+import { closeEventStreams, openEventStream, publishLiveEvent } from './live-events.js'
 
 const app = express()
 const port = Number(process.env.PORT || 8320)
@@ -15,7 +27,7 @@ app.disable('x-powered-by')
 app.use(express.json({ limit: '256kb' }))
 app.use((request, response, next) => {
   response.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*')
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Railpool-Agent-Token')
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
   if (request.method === 'OPTIONS') return response.sendStatus(204)
   next()
@@ -25,9 +37,11 @@ function toRequest(row) {
   const payload = row.payload ?? {}
   const departureDate = formatDepartureDate(row.departure_date)
   const statusLabels = {
-    analyzing: 'AI 분석 중',
-    proposal_ready: '역제안 도착 · 2건',
+    analyzing: '조건 확인 중',
+    proposal_ready: '운송 제안 도착 · 2건',
     pooling: '함께 보내기 · 15/18TEU',
+    target_reached: '목표 물량 달성',
+    matching: '함께 보낼 화물 탐색 중',
     review_submitted: '검토 요청 보냄',
     closed: '종료',
   }
@@ -39,19 +53,50 @@ function toRequest(row) {
     quantity: payload.quantity ?? `${row.container_size} × ${row.container_count} · ${formatTeu(row.teu)}TEU`,
     departureDate: payload.departureLabel ?? departureDate,
     status: row.status,
-    statusLabel: payload.statusLabel ?? statusLabels[row.status] ?? '상태 확인 중',
-    updatedAt: payload.updatedAt ?? '방금 전',
+    statusLabel: row.current_teu !== undefined && ['pooling', 'target_reached'].includes(row.status)
+      ? `함께 보내기 · ${formatTeu(row.current_teu)}/${formatTeu(row.target_teu)}TEU`
+      : statusLabels[row.status] ?? payload.statusLabel ?? '상태 확인 중',
+    updatedAt: formatRelativeTime(row.updated_at),
   }
 }
 
+function formatRelativeTime(value) {
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000))
+  if (elapsedSeconds < 60) return '방금 전'
+  if (elapsedSeconds < 3600) return `${Math.floor(elapsedSeconds / 60)}분 전`
+  if (elapsedSeconds < 86_400) return `${Math.floor(elapsedSeconds / 3600)}시간 전`
+  return `${Math.floor(elapsedSeconds / 86_400)}일 전`
+}
+
+async function ensureProposalsForRequest(freightRequest) {
+  const existing = await pool.query('select payload from proposals where request_id = $1 order by rank', [freightRequest.id])
+  if (existing.rowCount && existing.rows.every((row) => row.payload?.engineVersion === 3)) return existing.rows.map((row) => row.payload)
+  const [network, sourceStatus] = await Promise.all([
+    getNetworkPlanningContext(freightRequest.payload),
+    getPublicDataStatus(),
+  ])
+  const publicDataConnected = sourceStatus.configured && sourceStatus.datasets.every((dataset) => dataset.status === 'connected')
+  const proposals = buildProposals({ ...freightRequest.payload, roadCost: freightRequest.road_cost }, freightRequest.id, { ...network, publicDataConnected })
+  for (const proposal of proposals) {
+    await pool.query(
+      `insert into proposals (id, request_id, type, rank, payload)
+       values ($1,$2,$3,$4,$5::jsonb)
+       on conflict (id) do update set payload = excluded.payload, updated_at = now()`,
+      [proposal.id, freightRequest.id, proposal.type, proposal.recommended ? 1 : 2, JSON.stringify(proposal)],
+    )
+  }
+  return proposals
+}
+
 app.get('/health', async (_request, response) => {
-  const database = await databaseHealth()
+  const [database, network] = await Promise.all([databaseHealth(), getNetworkSnapshot()])
   response.status(database.ok ? 200 : 503).json({
     ok: database.ok,
     service: 'railpool-api',
     database,
     ai: { enabled: process.env.AI_ENABLED === 'true', model: process.env.AI_MODEL || 'gpt-5.6-sol' },
     publicData: { configured: Boolean(process.env.KORAIL_API_KEY) },
+    agents: { active: network.activeAgents, total: network.totalAgents },
   })
 })
 
@@ -65,8 +110,100 @@ app.get('/api/v1/sources', async (_request, response, next) => {
 
 app.get('/api/v1/requests', async (_request, response, next) => {
   try {
-    const result = await pool.query('select * from freight_requests order by updated_at desc limit 20')
+    const result = await pool.query(
+      `select fr.*, ps.current_teu, ps.target_teu
+         from freight_requests fr
+         left join pool_summaries ps on ps.request_id = fr.id
+        where fr.user_id = 'rail-logistics-user'
+        order by fr.updated_at desc limit 20`,
+    )
     response.json({ requests: result.rows.map(toRequest) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.get('/api/v1/requests/:id', async (request, response, next) => {
+  try {
+    const found = await pool.query(
+      `select fr.*, ps.current_teu, ps.target_teu
+         from freight_requests fr
+         left join pool_summaries ps on ps.request_id = fr.id
+        where fr.id = $1 and fr.user_id = 'rail-logistics-user'`,
+      [request.params.id],
+    )
+    if (!found.rowCount) return response.status(404).json({ message: '운송 요청을 찾지 못했습니다.' })
+    const freightRequest = found.rows[0]
+    const proposals = await ensureProposalsForRequest(freightRequest)
+    const poolSnapshot = await getPoolSnapshot(freightRequest.id)
+    response.json({
+      request: toRequest(freightRequest),
+      requestInput: freightRequest.payload,
+      baseline: buildBaseline({ ...freightRequest.payload, roadCost: freightRequest.road_cost }),
+      proposals,
+      pool: poolSnapshot,
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.get('/api/v1/network', async (_request, response, next) => {
+  try {
+    response.json(await getNetworkSnapshot())
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.get('/api/v1/pools/:id', async (request, response, next) => {
+  try {
+    const snapshot = await getPoolSnapshot(request.params.id)
+    if (!snapshot) return response.status(404).json({ message: '함께 보내기 현황을 찾지 못했습니다.' })
+    response.json({ pool: snapshot })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.get('/api/v1/events', async (request, response, next) => {
+  try {
+    openEventStream(request, response, { network: await getNetworkSnapshot() })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.post('/api/v1/agents/register', requireAgentAuth, async (request, response, next) => {
+  try {
+    const agent = await registerAgent(request.body ?? {})
+    response.status(201).json({ agent: { id: agent.id, status: agent.status, lastSeenAt: agent.last_seen_at } })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.post('/api/v1/agents/:id/heartbeat', requireAgentAuth, async (request, response, next) => {
+  try {
+    response.json({ agent: await heartbeatAgent(request.params.id, request.body ?? {}) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.get('/api/v1/agents/assignment/current', requireAgentAuth, async (_request, response, next) => {
+  try {
+    response.json({ assignment: await getActivePoolAssignment() })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.post('/api/v1/agents/:id/actions', requireAgentAuth, async (request, response, next) => {
+  try {
+    const result = await performAgentAction(request.params.id, request.body ?? {})
+    if (!result.duplicate) publishLiveEvent(result.event)
+    response.status(result.duplicate ? 200 : 201).json(result)
   } catch (error) {
     next(error)
   }
@@ -83,7 +220,7 @@ app.post('/api/v1/extract', async (request, response) => {
   aiRateWindows.set(clientKey, windowState)
   if (windowState.count > aiRateLimit) {
     response.setHeader('Retry-After', '60')
-    return response.status(429).json({ message: 'AI 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.' })
+    return response.status(429).json({ message: '조건 인식 요청이 많습니다. 잠시 후 다시 시도해 주세요.' })
   }
 
   const text = String(request.body?.text ?? '').trim()
@@ -108,7 +245,9 @@ app.post('/api/v1/requests', async (request, response, next) => {
   try {
     const sequence = await pool.query("select nextval('request_number_seq') as value")
     const id = `R-2026-${String(sequence.rows[0].value).padStart(4, '0')}`
-    const input = request.body
+    const input = { ...request.body }
+    input.containerCount = Number(input.containerCount)
+    input.teu = input.containerCount * (input.containerSize === '40ft' ? 2 : 1)
     const result = await pool.query(
       `insert into freight_requests
         (id, origin, destination, container_size, container_count, teu, departure_date, deadline_at, hazardous, road_cost, status, payload)
@@ -127,7 +266,12 @@ app.post('/api/v1/requests/:id/analyze', async (request, response, next) => {
     const found = await pool.query('select * from freight_requests where id = $1', [request.params.id])
     if (!found.rowCount) return response.status(404).json({ message: '운송 요청을 찾지 못했습니다.' })
     const freightRequest = found.rows[0]
-    const proposals = buildProposals({ ...freightRequest.payload, roadCost: freightRequest.road_cost })
+    const [network, sourceStatus] = await Promise.all([
+      getNetworkPlanningContext(freightRequest.payload),
+      getPublicDataStatus(),
+    ])
+    const publicDataConnected = sourceStatus.configured && sourceStatus.datasets.every((dataset) => dataset.status === 'connected')
+    const proposals = buildProposals({ ...freightRequest.payload, roadCost: freightRequest.road_cost }, freightRequest.id, { ...network, publicDataConnected })
 
     const client = await pool.connect()
     try {
@@ -149,10 +293,12 @@ app.post('/api/v1/requests/:id/analyze', async (request, response, next) => {
       client.release()
     }
 
-    const sourceStatus = process.env.KORAIL_API_KEY
-      ? await getPublicDataStatus()
-      : { configured: false, mode: 'demo_snapshot' }
-    response.json({ request: toRequest({ ...freightRequest, status: 'proposal_ready' }), proposals, sources: sourceStatus })
+    response.json({
+      request: toRequest({ ...freightRequest, status: 'proposal_ready', updated_at: new Date() }),
+      baseline: buildBaseline({ ...freightRequest.payload, roadCost: freightRequest.road_cost }),
+      proposals,
+      sources: sourceStatus,
+    })
   } catch (error) {
     next(error)
   }
@@ -160,60 +306,45 @@ app.post('/api/v1/requests/:id/analyze', async (request, response, next) => {
 
 app.post('/api/v1/requests/:id/decisions', async (request, response, next) => {
   const { proposalId, decision, reason } = request.body ?? {}
-  if (!proposalId || !['accepted', 'rejected'].includes(decision)) return response.status(400).json({ message: '제안과 결정값이 필요합니다.' })
+  if (!proposalId || !['accepted', 'rejected', 'cancelled'].includes(decision)) return response.status(400).json({ message: '제안과 결정값이 필요합니다.' })
   try {
+    if (decision === 'cancelled') {
+      await pool.query("update freight_requests set status = 'cancelled', updated_at = now() where id = $1", [request.params.id])
+      await pool.query('delete from pool_members where request_id = $1 and is_owner = true', [request.params.id])
+      return response.json({ decision, cancelled: true })
+    }
     await pool.query(
       'insert into proposal_decisions (id, request_id, proposal_id, decision, reason) values ($1,$2,$3,$4,$5)',
       [randomUUID(), request.params.id, proposalId, decision, reason ?? null],
     )
     if (decision === 'accepted') {
-      await pool.query("update freight_requests set status = 'pooling', updated_at = now() where id = $1", [request.params.id])
-      await pool.query(
-        `insert into pool_summaries (request_id, current_teu, target_teu, unit_cost, status)
-         values ($1,15,18,640000,'pooling')
-         on conflict (request_id) do update set current_teu = 15, target_teu = 18, unit_cost = 640000, status = 'pooling', updated_at = now()`,
-        [request.params.id],
-      )
+      const freight = await pool.query('select * from freight_requests where id = $1', [request.params.id])
+      if (!freight.rowCount) return response.status(404).json({ message: '운송 요청을 찾지 못했습니다.' })
+      const client = await pool.connect()
+      try {
+        await client.query('begin')
+        await client.query(
+          `insert into pool_summaries (request_id, current_teu, target_teu, unit_cost, status)
+           values ($1,$2,18,640000,'pooling')
+           on conflict (request_id) do update set target_teu = 18, status = 'pooling', updated_at = now()`,
+          [request.params.id, Number(freight.rows[0].teu)],
+        )
+        await client.query(
+          `insert into pool_members (request_id, member_id, display_name, region, teu, status, is_owner)
+           values ($1,'owner-rail-logistics-user','내 화물',$2,$3,'confirmed',true)
+           on conflict (request_id, member_id) do update set teu = excluded.teu, updated_at = now()`,
+          [request.params.id, freight.rows[0].payload?.originLabel ?? '충남 서북부', Number(freight.rows[0].teu)],
+        )
+        await recalculatePool(client, request.params.id)
+        await client.query('commit')
+      } catch (error) {
+        await client.query('rollback')
+        throw error
+      } finally {
+        client.release()
+      }
     }
-    response.json({ ok: true })
-  } catch (error) {
-    next(error)
-  }
-})
-
-app.post('/api/v1/requests/:id/demo/fill', async (request, response, next) => {
-  try {
-    await pool.query(
-      `insert into pool_summaries (request_id, current_teu, target_teu, unit_cost, status)
-       values ($1,18,18,607500,'target_reached')
-       on conflict (request_id) do update set current_teu = 18, target_teu = 18, unit_cost = 607500, status = 'target_reached', updated_at = now()`,
-      [request.params.id],
-    )
-    await pool.query(
-      `insert into notifications (id, request_id, type, title, payload)
-       values ($1,$2,'pool_filled','목표 물량을 채웠어요',$3::jsonb)`,
-      [randomUUID(), request.params.id, JSON.stringify({ joinedTeu: 3, currentTeu: 18 })],
-    )
-    response.json({ currentTeu: 18, targetTeu: 18, joinedTeu: 3, unitCost: 607_500 })
-  } catch (error) {
-    next(error)
-  }
-})
-
-app.post('/api/v1/requests/:id/demo/disruption', async (request, response, next) => {
-  try {
-    await pool.query(
-      `insert into pool_summaries (request_id, current_teu, target_teu, unit_cost, status)
-       values ($1,15,18,640000,'recovered')
-       on conflict (request_id) do update set current_teu = 15, status = 'recovered', updated_at = now()`,
-      [request.params.id],
-    )
-    await pool.query(
-      `insert into notifications (id, request_id, type, title, payload)
-       values ($1,$2,'disruption_recovered','새 참여사 조합으로 갱신됨',$3::jsonb)`,
-      [randomUUID(), request.params.id, JSON.stringify({ beforeTeu: 11, currentTeu: 15 })],
-    )
-    response.json({ currentTeu: 15, targetTeu: 18, status: 'recovered' })
+    response.json({ ok: true, pool: decision === 'accepted' ? await getPoolSnapshot(request.params.id) : null })
   } catch (error) {
     next(error)
   }
@@ -239,14 +370,16 @@ app.post('/api/v1/requests/:id/review', async (request, response, next) => {
 
 app.use((error, request, response, _next) => {
   console.error(`[api] ${request.method} ${request.path}:`, error.message)
-  response.status(500).json({ message: '요청을 처리하지 못했습니다. 입력값은 안전하게 유지됩니다.' })
+  response.status(error.statusCode || 500).json({ message: error.statusCode ? error.message : '요청을 처리하지 못했습니다. 입력값은 안전하게 유지됩니다.' })
 })
 
-const server = app.listen(port, '0.0.0.0', () => {
-  console.log(`[railpool-api] listening on ${port}`)
-})
+await ensureSchema(pool)
+await initializeAgentAuth()
+
+const server = app.listen(port, '0.0.0.0', () => console.log(`[railpool-api] listening on ${port}`))
 
 async function shutdown() {
+  closeEventStreams()
   server.close(async () => {
     await closeDatabase()
     process.exit(0)

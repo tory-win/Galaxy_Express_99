@@ -3,6 +3,7 @@ WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY server/package.json ./server/package.json
+COPY agents/package.json ./agents/package.json
 RUN pnpm install --frozen-lockfile
 COPY . .
 EXPOSE 5173

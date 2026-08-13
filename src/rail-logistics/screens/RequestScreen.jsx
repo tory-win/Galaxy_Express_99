@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { AXIS_OPTIONS, DEFAULT_FORM, DEMO_EMAIL, formatManWon } from '../demoData.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { AXIS_OPTIONS, DEFAULT_FORM, EXAMPLE_EMAIL, formatManWon } from '../demoData.js'
 import { ConfidenceBadge, Icon, PrimaryButton, SecondaryButton, SectionHeading } from '../components.jsx'
 
 function Field({ label, required = false, hint, children, evidence }) {
@@ -7,7 +7,7 @@ function Field({ label, required = false, hint, children, evidence }) {
     <label className="rp-field">
       <span className="rp-field__label">{label}{required && <b>필수</b>}{hint && <small>{hint}</small>}</span>
       {children}
-      {evidence && <em className="rp-evidence"><Icon name="spark" size={11} /> {evidence}</em>}
+      {evidence && <em className="rp-evidence"><Icon name="check" size={11} /> {evidence}</em>}
     </label>
   )
 }
@@ -28,6 +28,11 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
   const [evidence, setEvidence] = useState({})
   const [extracted, setExtracted] = useState(false)
   const [error, setError] = useState('')
+  const [listening, setListening] = useState(false)
+  const [speechSupported] = useState(() => Boolean(window.SpeechRecognition || window.webkitSpeechRecognition))
+  const recognitionRef = useRef(null)
+
+  useEffect(() => () => recognitionRef.current?.stop(), [])
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -39,17 +44,10 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
 
   const update = (name, value) => setForm((current) => ({ ...current, [name]: value }))
   const updateAxis = (id, value) => setForm((current) => ({ ...current, axes: { ...current.axes, [id]: value } }))
-  const toggleLock = (id) => setForm((current) => ({
-    ...current,
-    lockedAxes: current.lockedAxes.includes(id)
-      ? current.lockedAxes.filter((item) => item !== id)
-      : [...current.lockedAxes, id],
-  }))
-
   const opportunityCount = useMemo(() => {
-    const open = AXIS_OPTIONS.filter((axis) => !form.lockedAxes.includes(axis.id) && !['불가', '지정한 곳만', '기존 유지'].includes(form.axes[axis.id])).length
+    const open = AXIS_OPTIONS.filter((axis) => !['불가', '지정한 곳만', '기존 유지'].includes(form.axes[axis.id])).length
     return Math.min(5, Math.max(1, open - 1))
-  }, [form.axes, form.lockedAxes])
+  }, [form.axes])
 
   const handleExtract = async () => {
     if (!emailText.trim()) {
@@ -57,10 +55,55 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
       return
     }
     setError('')
-    const result = await onExtract(emailText)
-    setForm((current) => ({ ...current, ...result.fields, axes: { ...current.axes, ...(result.fields.axes ?? {}) } }))
-    setEvidence(result.evidence ?? {})
-    setExtracted(true)
+    try {
+      const result = await onExtract(emailText)
+      setForm((current) => ({
+        ...current,
+        ...result.fields,
+        axes: { ...current.axes, ...(result.fields.axes ?? {}) },
+        intake: { channel: mode === 'voice' ? 'voice-transcript' : 'document', transcript: emailText.trim(), audioStored: false },
+      }))
+      setEvidence(result.evidence ?? {})
+      setExtracted(true)
+    } catch (extractError) {
+      setError(extractError.message)
+    }
+  }
+
+  const startVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      setError('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 또는 Edge에서 이용해 주세요.')
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'ko-KR'
+    recognition.continuous = true
+    recognition.interimResults = true
+    let confirmedText = emailText.trim()
+    recognition.onresult = (event) => {
+      let interimText = ''
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const phrase = event.results[index][0].transcript.trim()
+        if (event.results[index].isFinal) confirmedText = `${confirmedText} ${phrase}`.trim()
+        else interimText += `${phrase} `
+      }
+      setEmailText(`${confirmedText} ${interimText}`.trim())
+    }
+    recognition.onerror = (event) => {
+      setListening(false)
+      if (event.error !== 'aborted') setError('음성을 또렷이 인식하지 못했습니다. 다시 말하거나 현재 텍스트를 직접 고쳐 주세요.')
+    }
+    recognition.onend = () => setListening(false)
+    recognitionRef.current = recognition
+    setError('')
+    setListening(true)
+    recognition.start()
+  }
+
+  const stopVoiceInput = () => {
+    recognitionRef.current?.stop()
+    setListening(false)
   }
 
   const validateBasic = () => {
@@ -91,15 +134,27 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
           <SectionHeading eyebrow="STEP 1" title="보내실 화물을 알려주세요" />
           <div className="rp-segmented" aria-label="운송 조건 입력 방법">
             <button type="button" aria-pressed={mode === 'direct'} className={mode === 'direct' ? 'is-active' : ''} onClick={() => setMode('direct')}>직접 입력</button>
-            <button type="button" aria-pressed={mode === 'email'} className={mode === 'email' ? 'is-active' : ''} onClick={() => setMode('email')}>이메일·문서 붙여넣기</button>
+            <button type="button" aria-pressed={mode === 'email'} className={mode === 'email' ? 'is-active' : ''} onClick={() => setMode('email')}>이메일·문서</button>
+            <button type="button" aria-pressed={mode === 'voice'} className={mode === 'voice' ? 'is-active' : ''} onClick={() => setMode('voice')}>전화·음성</button>
           </div>
 
-          {mode === 'email' && (
+          {(mode === 'email' || mode === 'voice') && (
             <section className="rp-paste-card">
-              <div className="rp-paste-card__heading"><span><Icon name="mail" size={17} /></span><div><strong>사내 메일을 그대로 붙여넣으세요</strong><small>원문에 없는 값은 만들지 않고 확인 필요로 남깁니다.</small></div></div>
-              <textarea value={emailText} onChange={(event) => setEmailText(event.target.value)} placeholder="출발지, 도착지, 수량, 날짜가 포함된 메일 내용을 붙여넣어 주세요." />
-              <button type="button" className="rp-sample-button" onClick={() => setEmailText(DEMO_EMAIL)}>시연용 메일 불러오기</button>
-              <PrimaryButton disabled={busy || !emailText.trim()} onClick={handleExtract}>{busy ? '조건을 읽는 중…' : 'AI로 조건 자동 인식'}</PrimaryButton>
+              <div className="rp-paste-card__heading"><span><Icon name={mode === 'voice' ? 'phone' : 'mail'} size={17} /></span><div><strong>{mode === 'voice' ? '전화 문의를 들으며 받아쓰세요' : '사내 메일을 그대로 붙여넣으세요'}</strong><small>{mode === 'voice' ? '발음이 불분명해도 먼저 텍스트로 옮긴 뒤 AI가 운송 조건을 해석합니다.' : '원문에 없는 값은 만들지 않고 확인 필요로 남깁니다.'}</small></div></div>
+              {mode === 'voice' && (
+                <>
+                  <div className="rp-voice-controls">
+                    <button type="button" className={listening ? 'is-listening' : ''} onClick={listening ? stopVoiceInput : startVoiceInput} aria-pressed={listening} disabled={!speechSupported}>
+                      <span aria-hidden="true">{listening ? '■' : '●'}</span>{listening ? '받아쓰기 중지' : '받아쓰기 시작'}
+                    </button>
+                    <small>{speechSupported ? (listening ? '말씀하신 내용이 아래에 실시간으로 표시됩니다.' : '마이크 사용 권한이 필요합니다.') : '이 브라우저에서는 직접 텍스트를 입력해 주세요.'}</small>
+                  </div>
+                  <aside className="rp-voice-privacy"><strong>기본 설정: 음성 파일은 저장하지 않음</strong><p>AI 해석 결과와 수정한 텍스트만 요청 기록에 남습니다. 실제 통화 녹음은 사전 고지·동의, 보관 기간과 접근 권한에 대한 법무·보안 검토 후 별도로 제공해야 합니다.</p></aside>
+                </>
+              )}
+              <textarea aria-label={mode === 'voice' ? '음성 인식 텍스트' : '메일 또는 문서 내용'} value={emailText} onChange={(event) => setEmailText(event.target.value)} placeholder={mode === 'voice' ? '예: 아산에서 부산신항까지 20피트 4개, 8월 18일 출발이요…' : '출발지, 도착지, 수량, 날짜가 포함된 메일 내용을 붙여넣어 주세요.'} />
+              {mode === 'email' && <button type="button" className="rp-sample-button" onClick={() => setEmailText(EXAMPLE_EMAIL)}>예시 메일 불러오기</button>}
+              <PrimaryButton disabled={busy || listening || !emailText.trim()} onClick={handleExtract}>{busy ? '조건을 읽는 중…' : mode === 'voice' ? 'AI로 해석하고 조건 입력' : '조건 자동 입력'}</PrimaryButton>
               {extracted && (
                 <div className="rp-extracted-summary">
                   <strong><Icon name="check" size={14} /> 6개 필수 항목을 인식했습니다</strong>
@@ -121,7 +176,10 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
               </Field>
               <div className="rp-field-row">
                 <Field label="컨테이너" required evidence={evidence.containerCount}>
-                  <select value={form.containerSize} onChange={(event) => update('containerSize', event.target.value)}><option>20ft</option><option>40ft</option></select>
+                  <select value={form.containerSize} onChange={(event) => {
+                    const containerSize = event.target.value
+                    setForm((current) => ({ ...current, containerSize, teu: current.containerCount * (containerSize === '40ft' ? 2 : 1) }))
+                  }}><option>20ft</option><option>40ft</option></select>
                 </Field>
                 <Field label="수량" required>
                   <div className="rp-number-input"><input type="number" min="1" value={form.containerCount} onChange={(event) => {
@@ -140,7 +198,8 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
               {form.hazardous === 'yes' && <div className="rp-danger-note"><Icon name="alert" size={18} /><div><strong>위험물은 별도 검토가 필요합니다</strong><p>자동 계산을 중단하고 코레일 담당자가 취급 가능 여부를 확인합니다.</p></div></div>}
               <details className="rp-optional-fields" open>
                 <summary>정확도를 높이는 참고 정보</summary>
-                <Field label="현재 도로 운송비"><div className="rp-number-input"><input type="number" step="10000" value={form.roadCost} onChange={(event) => update('roadCost', Number(event.target.value))} /><span>원</span></div></Field>
+                <Field label="원래 계획한 운송 방식"><select value={form.currentMode} onChange={(event) => update('currentMode', event.target.value)}><option value="road">도로운송</option><option value="rail">철도운송</option><option value="undecided">아직 미정</option></select></Field>
+                <Field label="현재 받은 운송비" hint="견적이 없다면 비워두셔도 됩니다"><div className="rp-number-input"><input type="number" step="10000" value={form.roadCost || ''} placeholder="선택 입력" onChange={(event) => update('roadCost', event.target.value ? Number(event.target.value) : null)} /><span>원</span></div></Field>
                 <div className="rp-field-row">
                   <Field label="화물 무게"><div className="rp-number-input"><input type="number" value={form.weightTons} onChange={(event) => update('weightTons', Number(event.target.value))} /><span>톤</span></div></Field>
                   <Field label="반복 발송"><select value={form.frequency} onChange={(event) => update('frequency', event.target.value)}><option>일회성</option><option>주 1회</option><option>월 2회</option></select></Field>
@@ -155,22 +214,21 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
       {step === 2 && (
         <>
           <SectionHeading eyebrow="STEP 2" title="어디까지 검토해볼까요?" />
-          <p className="rp-section-copy">포기할 조건을 고르는 것이 아니라, AI가 살펴볼 범위를 넓히는 단계입니다.</p>
+          <p className="rp-section-copy">조정할 수 있는 범위를 알려주시면 가능한 운송 방법을 더 찾아봅니다.</p>
           <div className="rp-axis-list">
             {AXIS_OPTIONS.map((axis) => (
-              <section className={`rp-axis-card ${form.lockedAxes.includes(axis.id) ? 'is-locked' : ''}`} key={axis.id}>
+              <section className="rp-axis-card" key={axis.id}>
                 <div className="rp-axis-card__head">
                   <div><strong>{axis.label}</strong><small>{axis.helper}</small></div>
-                  <button type="button" className="rp-lock-button" aria-pressed={form.lockedAxes.includes(axis.id)} onClick={() => toggleLock(axis.id)}>{form.lockedAxes.includes(axis.id) ? '잠금 해제' : '잠그기'}</button>
                 </div>
                 <div className="rp-axis-options">
-                  {axis.options.map((option) => <button type="button" key={option} disabled={form.lockedAxes.includes(axis.id)} aria-pressed={form.axes[axis.id] === option} className={form.axes[axis.id] === option ? 'is-active' : ''} onClick={() => updateAxis(axis.id, option)}>{option}</button>)}
+                  {axis.options.map((option) => <button type="button" key={option} aria-pressed={form.axes[axis.id] === option} className={form.axes[axis.id] === option ? 'is-active' : ''} onClick={() => updateAxis(axis.id, option)}>{option}</button>)}
                 </div>
               </section>
             ))}
           </div>
           <aside className="rp-opportunity-panel">
-            <div><span><Icon name="spark" size={16} /></span><div><small>지금 조건으로 찾을 수 있는 방법</small><strong>{opportunityCount}가지</strong></div></div>
+            <div><span><Icon name="train" size={16} /></span><div><small>지금 조건으로 찾을 수 있는 방법</small><strong>{opportunityCount}가지</strong></div></div>
             <p>출발일을 ±2일로 열면 <b>{Math.min(5, opportunityCount + 2)}가지</b>로 늘어납니다.</p>
           </aside>
           <p className="rp-skip-note">잘 모르겠으면 넘어가셔도 됩니다. 제안을 보면서 다시 정할 수 있어요.</p>
@@ -184,29 +242,30 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
             <span className="rp-confirm-card__route">{form.origin}<i>→</i>{form.destination}</span>
             <dl>
               <div><dt>화물</dt><dd>{form.containerSize} × {form.containerCount} · {form.teu}TEU</dd></div>
-              <div><dt>희망 출발</dt><dd>8월 18일(화)</dd></div>
-              <div><dt>도착 마감</dt><dd>8월 20일(목) 09:00</dd></div>
-              <div><dt>현재 도로비</dt><dd>{formatManWon(form.roadCost)} <ConfidenceBadge kind="확인 완료" compact /></dd></div>
+              <div><dt>희망 출발</dt><dd>{form.departureDate}</dd></div>
+              <div><dt>도착 마감</dt><dd>{form.deadline.replace('T', ' ')}</dd></div>
+              <div><dt>원래 계획</dt><dd>{{ road: '도로운송', rail: '철도운송', undecided: '운송 방식 미정' }[form.currentMode]}</dd></div>
+              <div><dt>받은 운송비</dt><dd>{form.roadCost ? <>{formatManWon(form.roadCost)} <ConfidenceBadge kind="확인 완료" compact /></> : '입력 안 함 · 시장 기준으로 비교'}</dd></div>
             </dl>
           </section>
           <section className="rp-open-axes">
             <strong>열어둔 검토 범위</strong>
-            <div>{AXIS_OPTIONS.filter((axis) => !form.lockedAxes.includes(axis.id)).map((axis) => <span key={axis.id}>{axis.label} {form.axes[axis.id]}</span>)}</div>
+            <div>{AXIS_OPTIONS.map((axis) => <span key={axis.id}>{axis.label} {form.axes[axis.id]}</span>)}</div>
           </section>
           <div className="rp-analysis-explainer">
-            <span><Icon name="spark" size={20} /></span>
-            <div><strong>AI가 그대로 견적을 내지 않습니다</strong><p>현재 계획을 기준선으로 계산한 뒤 날짜·화물역·물량 조합을 바꾸며 더 나은 상위 2~3개만 제안합니다.</p></div>
+            <span><Icon name="check" size={20} /></span>
+            <div><strong>입력한 조건 안에서 비교합니다</strong><p>현재 계획과 날짜·화물역·물량 조합을 비교해 차이가 큰 운송 방법만 보여드립니다.</p></div>
           </div>
         </>
       )}
 
       {error && <p className="rp-form-error" role="alert">{error}</p>}
 
-      {!(step === 1 && mode === 'email' && !extracted) && (
+      {!(step === 1 && ['email', 'voice'].includes(mode) && !extracted) && (
         <div className="rp-form-actions">
           {step > 1 && <SecondaryButton onClick={() => setStep((current) => current - 1)}>이전</SecondaryButton>}
           {step < 3 && <PrimaryButton onClick={next}>다음</PrimaryButton>}
-          {step === 3 && <PrimaryButton onClick={() => onAnalyze(form)} disabled={busy || form.hazardous === 'yes'}>{busy ? 'AI가 분석 중…' : 'AI에게 방법 물어보기'}</PrimaryButton>}
+          {step === 3 && <PrimaryButton onClick={() => onAnalyze(form)} disabled={busy || form.hazardous === 'yes'}>{busy ? '운송 방법 찾는 중…' : '운송 방법 찾기'}</PrimaryButton>}
         </div>
       )}
     </div>

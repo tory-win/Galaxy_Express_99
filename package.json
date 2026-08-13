@@ -2,13 +2,15 @@
   "name": "railpool-ai",
   "private": true,
   "version": "1.0.0",
+  "packageManager": "pnpm@9.15.9",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "dev:api": "pnpm --dir server dev",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "check": "vite build && pnpm --dir server test",
+    "check": "pnpm check:design && vite build && pnpm --dir server test && pnpm --dir agents test",
+    "check:design": "node scripts/check-design-system.mjs",
     "test": "pnpm --dir server test",
     "test:e2e": "playwright test"
   },

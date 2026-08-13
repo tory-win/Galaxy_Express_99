@@ -1,5 +1,27 @@
 name: railpool-product
 
+x-shipper-agent: &shipper-agent
+  build:
+    context: .
+    dockerfile: agents/Dockerfile
+  environment: &shipper-agent-environment
+    API_BASE_URL: http://api:8320/api/v1
+    AGENT_TOKEN_PATH: /run/railpool/agent-api-token
+    HEARTBEAT_MS: "5000"
+    AGENT_TICK_MS: "5000"
+  volumes:
+    - railpool-agent-auth:/run/railpool:ro
+  depends_on:
+    api:
+      condition: service_healthy
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8787/"]
+    interval: 10s
+    timeout: 3s
+    retries: 5
+    start_period: 15s
+
 services:
   web:
     build:
@@ -44,6 +66,7 @@ services:
       - "${API_PORT:-8320}:8320"
     volumes:
       - ./server/src:/app/server/src:ro
+      - railpool-agent-auth:/run/railpool
     depends_on:
       db:
         condition: service_healthy
@@ -55,6 +78,66 @@ services:
       interval: 10s
       timeout: 3s
       retries: 8
+
+  shipper-agent-01:
+    <<: *shipper-agent
+    environment:
+      <<: *shipper-agent-environment
+      AGENT_ID: shipper-01
+
+  shipper-agent-02:
+    <<: *shipper-agent
+    environment:
+      <<: *shipper-agent-environment
+      AGENT_ID: shipper-02
+
+  shipper-agent-03:
+    <<: *shipper-agent
+    environment:
+      <<: *shipper-agent-environment
+      AGENT_ID: shipper-03
+
+  shipper-agent-04:
+    <<: *shipper-agent
+    environment:
+      <<: *shipper-agent-environment
+      AGENT_ID: shipper-04
+
+  shipper-agent-05:
+    <<: *shipper-agent
+    environment:
+      <<: *shipper-agent-environment
+      AGENT_ID: shipper-05
+
+  shipper-agent-06:
+    <<: *shipper-agent
+    environment:
+      <<: *shipper-agent-environment
+      AGENT_ID: shipper-06
+
+  shipper-agent-07:
+    <<: *shipper-agent
+    environment:
+      <<: *shipper-agent-environment
+      AGENT_ID: shipper-07
+
+  shipper-agent-08:
+    <<: *shipper-agent
+    environment:
+      <<: *shipper-agent-environment
+      AGENT_ID: shipper-08
+
+  shipper-agent-09:
+    <<: *shipper-agent
+    environment:
+      <<: *shipper-agent-environment
+      AGENT_ID: shipper-09
+
+  shipper-agent-10:
+    <<: *shipper-agent
+    environment:
+      <<: *shipper-agent-environment
+      AGENT_ID: shipper-10
 
   db:
     image: postgres:16-alpine
@@ -77,3 +160,4 @@ services:
 volumes:
   railpool-db-data:
   railpool-node-modules:
+  railpool-agent-auth:
