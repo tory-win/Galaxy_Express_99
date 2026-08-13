@@ -67,9 +67,18 @@ export function PoolScreen({ proposal, pool, network, onReview, onModify, onDisr
       </section>
 
       <section className="rp-notification-settings">
-        <div><Icon name="alert" size={18} /><div><strong>모집 알림</strong><p>참여·이탈, 목표 달성, 코레일 확인 결과를 푸시로 알려드립니다.</p></div></div>
-        <button type="button" role="switch" aria-checked={notifications} onClick={() => setNotifications((value) => !value)}>{notifications ? '푸시 알림 켜짐' : '푸시 알림 꺼짐'}</button>
-        <small>모집 판단 마감: 출발 48시간 전 · 목표 미달 사전 알림: 72시간 전 · 긴급 요청은 등록 즉시 2시간 간격으로 상황을 안내합니다.</small>
+        <div className="rp-notification-settings__header">
+          <span className="rp-notification-settings__icon"><Icon name="alert" size={18} /></span>
+          <div><strong>모집 알림</strong><p>참여·이탈, 목표 달성, 코레일 확인 결과를 푸시로 알려드립니다.</p></div>
+          <button type="button" role="switch" aria-checked={notifications} aria-label="모집 푸시 알림" onClick={() => setNotifications((value) => !value)}>
+            <span>{notifications ? '켜짐' : '꺼짐'}</span><i aria-hidden="true" />
+          </button>
+        </div>
+        <ul className="rp-notification-settings__schedule" aria-label="모집 알림 일정">
+          <li><span>모집 판단 마감</span><strong>출발 48시간 전</strong></li>
+          <li><span>목표 미달 사전 알림</span><strong>출발 72시간 전</strong></li>
+          <li><span>긴급 요청</span><strong>등록 즉시, 2시간 간격</strong></li>
+        </ul>
       </section>
 
       <p className="rp-no-charge"><Icon name="check" size={14} /> 목표 물량에 미달하면 자동 취소되며 비용은 발생하지 않습니다.</p>
