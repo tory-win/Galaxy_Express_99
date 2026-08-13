@@ -140,6 +140,7 @@ test('refresh keeps the Rail Logistics context instead of resetting to Korail ho
 test('request method order and searchable public-data stations are keyboard usable', async ({ page }) => {
   await page.goto('./#rail-logistics')
   await page.locator('.rp-bottom-nav').getByRole('button', { name: 'AI에게 운송 요청하기' }).click()
+  await expect(page.getByRole('heading', { name: 'AI에게 운송 요청하기' })).toBeVisible()
 
   const methods = page.locator('.rp-segmented button')
   await expect(methods).toHaveCount(3)

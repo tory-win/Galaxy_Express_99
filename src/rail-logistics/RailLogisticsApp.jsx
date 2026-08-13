@@ -22,7 +22,7 @@ import './rail-logistics.css'
 
 const TITLES = {
   dashboard: ['레일물류', 'KORAIL+'],
-  request: ['새 운송 요청', '레일물류'],
+  request: ['AI에게 운송 요청하기', '레일물류'],
   proposals: ['운송 제안', '레일물류'],
   compare: ['제안 비교', '레일물류'],
   pool: ['함께 보내기', '레일물류'],
