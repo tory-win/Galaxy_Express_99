@@ -1,8 +1,8 @@
-import { AppHeader, AppIcon, Button, IconButton, SectionHeading as KorailSectionHeading, StatusBar, StatusPill as KorailStatusPill, SubBottomNav } from '../design-system/index.js'
+import { AppHeader, AppIcon, Button, SectionHeading as KorailSectionHeading, StatusBar, StatusPill as KorailStatusPill, SubBottomNav } from '../design-system/index.js'
 
 export const Icon = AppIcon
 
-export function RailHeader({ title, eyebrow, onBack, onNotifications, unread = 1 }) {
+export function RailHeader({ title, eyebrow, onBack }) {
   return (
     <>
       <StatusBar />
@@ -13,7 +13,6 @@ export function RailHeader({ title, eyebrow, onBack, onNotifications, unread = 1
         backLabel="이전 화면으로 돌아가기"
         onBack={onBack}
         className="is-centered"
-        actions={<IconButton label={`알림 ${unread}건`} onClick={onNotifications} badge={unread}><Icon name="bell" size={19} /></IconButton>}
       />
     </>
   )

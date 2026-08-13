@@ -348,7 +348,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
   return (
     <div className="rp-app">
       <span className="rp-sr-only" aria-live="polite" aria-atomic="true">{header[0]} 화면 · {liveStatus === 'live' ? '실시간 연결됨' : '연결 확인 중'}</span>
-      <RailHeader title={header[0]} eyebrow={header[1]} onBack={goBack} onNotifications={() => navigate('disruption')} unread={network.recentEvents?.some((event) => event.type === 'pool_left') ? 1 : 0} />
+      <RailHeader title={header[0]} eyebrow={header[1]} onBack={goBack} />
       <main ref={bodyRef} className={`rp-screen-body rp-screen-body--${view}`} tabIndex="-1" aria-label={`${header[0]} 화면`} aria-busy={busy}>
         {error && <div className="rp-connection-error" role="status">{error}</div>}
         {busy && view === 'request' && <div className="rp-loading-layer"><LoadingPanel /></div>}
