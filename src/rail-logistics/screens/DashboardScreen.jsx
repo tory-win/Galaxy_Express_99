@@ -24,7 +24,7 @@ function eventCopy(event) {
   return '함께 보낼 수 있는 화물 조건을 계속 확인하고 있습니다.'
 }
 
-export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequest, onOpenRequest, onOpenPool, onOpenNotifications }) {
+export function DashboardScreen({ requests, network, liveStatus, busy, recording, onToggleRecording, onOpenRequest, onOpenPool, onOpenNotifications }) {
   const latestEvent = network.recentEvents?.[0]
   const [requestFilter, setRequestFilter] = useState('all')
   const totalEcoPoints = useMemo(() => requests.reduce((total, request) => total + (request.ecoPoints ?? 0), 0), [requests])
@@ -41,7 +41,9 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
     <div className="rp-dashboard">
       <section className="rp-hero-card" aria-labelledby="rail-logistics-start-title">
         <h1 id="rail-logistics-start-title">화물 조건을 등록하고<br />더 효율적인 운송 조건을 찾아보세요</h1>
-        <PrimaryButton onClick={onNewRequest}><Icon name="plus" size={16} /> 운송 요청하기</PrimaryButton>
+        <PrimaryButton className={recording ? 'is-recording' : ''} onClick={onToggleRecording}>
+          <Icon name={recording ? 'stop' : 'mic'} size={16} /> {recording ? '녹음 종료' : '녹음 시작'}
+        </PrimaryButton>
       </section>
 
       <section className="rp-network-card" aria-label="함께 보내기 네트워크 현황">
