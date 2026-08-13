@@ -67,9 +67,8 @@ export function PoolScreen({ proposal, pool, network, onReview, onModify, onDisr
       </section>
 
       <section className="rp-notification-settings">
-        <div><Icon name="alert" size={18} /><div><strong>코레일톡 알림</strong><p>접수 완료, 모집 진행 상황 변경, 목표 달성 및 최종 확정 시 앱 푸시와 카카오 알림톡으로 알려드립니다.</p></div></div>
-        <button type="button" role="switch" aria-checked={notifications} onClick={() => setNotifications((value) => !value)}>{notifications ? '알림 켜짐' : '알림 꺼짐'}</button>
-        <em>알림톡은 시연용이며 실제 메시지는 발송되지 않습니다.</em>
+        <div><Icon name="alert" size={18} /><div><strong>모집 알림</strong><p>다른 화주가 조회하거나 참여·이탈할 때, 목표 달성 시, 코레일 확인이 끝날 때 알려드립니다.</p></div></div>
+        <button type="button" role="switch" aria-checked={notifications} onClick={() => setNotifications((value) => !value)}>{notifications ? '푸시 알림 켜짐' : '푸시 알림 꺼짐'}</button>
         <small>모집 판단 마감: 출발 48시간 전 · 목표 미달 사전 알림: 72시간 전 · 긴급 요청은 등록 즉시 2시간 간격으로 상황을 안내합니다.</small>
       </section>
 

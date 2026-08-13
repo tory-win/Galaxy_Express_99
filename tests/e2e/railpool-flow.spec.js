@@ -51,7 +51,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expectUsableLayout(page)
   await capture(page, '02-railpool-dashboard')
 
-  await page.getByRole('button', { name: '음성으로 운송 요청 시작' }).click()
+  await page.getByRole('button', { name: /운송 요청하기/ }).click()
   await expect(page.locator('.rp-form-actions')).toHaveCount(0)
   await page.getByRole('button', { name: '이메일·문서' }).click()
   await page.getByRole('button', { name: '예시 메일 불러오기' }).click()
@@ -69,8 +69,6 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expect(page.getByRole('heading', { name: '이 조건으로 방법을 찾을게요' })).toBeVisible()
 
   await page.getByRole('button', { name: '운송 방법 찾기' }).click()
-  await expect(page.getByText('운송 요청 접수 완료', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '알림톡 미리보기 닫기' }).click()
   await expect(page.getByText(/현재 계획보다/).first()).toBeVisible()
   createdRequestId = await page.evaluate(() => window.sessionStorage.getItem('railpool:requestId'))
   await expect(page.getByText(/KORAIL·ODCloud 공공데이터/)).toHaveCount(0)
@@ -94,8 +92,6 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await page.getByRole('button', { name: '돌아가기', exact: true }).click()
 
   await page.getByRole('button', { name: '이 제안으로 진행' }).first().click()
-  await expect(page.getByText('진행 상황 변경', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '알림톡 미리보기 닫기' }).click()
   await expect(page.getByText(/곳에서 실시간 확인 중/)).toBeVisible()
   await expect(page.getByRole('heading', { name: '목표 물량을 채웠어요' })).toBeVisible({ timeout: 45_000 })
   await expect(page.locator('.rp-participant-list article')).toHaveCount(5)
@@ -111,7 +107,6 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expectUsableLayout(page)
   await page.getByRole('button', { name: '검토 요청 보내기' }).click()
   await expect(page.getByRole('heading', { name: '검토 요청이 전달되었습니다' })).toBeVisible()
-  await expect(page.getByText('코레일 검토 접수 완료', { exact: true })).toBeVisible()
   await capture(page, '05-review-submitted')
 
   expect(createdRequestId).toMatch(/^R-2026-/)
@@ -127,7 +122,7 @@ test('refresh keeps the Rail Logistics context instead of resetting to Korail ho
 
 test('request method order and searchable public-data stations are keyboard usable', async ({ page }) => {
   await page.goto('./#rail-logistics')
-  await page.getByRole('button', { name: '음성으로 운송 요청 시작' }).click()
+  await page.getByRole('button', { name: /운송 요청하기/ }).click()
 
   const methods = page.locator('.rp-segmented button')
   await expect(methods).toHaveText(['전화·음성', '조건 선택', '이메일·문서'])
