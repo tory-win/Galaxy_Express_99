@@ -22,7 +22,7 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
     <div className="rp-dashboard">
       <section className="rp-hero-card" aria-labelledby="rail-logistics-start-title">
         <h1 id="rail-logistics-start-title">화물 조건을 등록하고<br />함께 보낼 화물을 찾아보세요</h1>
-        <PrimaryButton onClick={onNewRequest}><Icon name="mic" size={18} /> 말하거나 직접 입력해 바로 요청하기</PrimaryButton>
+        <PrimaryButton onClick={onNewRequest}><Icon name="plus" size={16} /> 운송 요청하기</PrimaryButton>
       </section>
 
       <section className="rp-network-card" aria-label="함께 보내기 네트워크 현황">
