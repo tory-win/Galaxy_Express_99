@@ -51,8 +51,9 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expectUsableLayout(page)
   await capture(page, '02-railpool-dashboard')
 
-  await page.getByRole('button', { name: /새 화물 추가하기/ }).first().click()
+  await page.getByRole('button', { name: /말하거나 직접 입력해 바로 요청하기/ }).click()
   await expect(page.locator('.rp-form-actions')).toHaveCount(0)
+  await page.getByRole('button', { name: '이메일·문서' }).click()
   await page.getByRole('button', { name: '예시 메일 불러오기' }).click()
   await page.getByRole('button', { name: '조건 자동 입력' }).click()
   await expect(page.getByText('6개 필수 항목을 인식했습니다')).toBeVisible({ timeout: 15_000 })
@@ -121,7 +122,7 @@ test('refresh keeps the Rail Logistics context instead of resetting to Korail ho
 
 test('request method order and searchable public-data stations are keyboard usable', async ({ page }) => {
   await page.goto('./#rail-logistics')
-  await page.getByRole('button', { name: /새 화물 추가하기/ }).first().click()
+  await page.getByRole('button', { name: /말하거나 직접 입력해 바로 요청하기/ }).click()
 
   const methods = page.locator('.rp-segmented button')
   await expect(methods).toHaveText(['전화·음성', '조건 선택', '이메일·문서'])
