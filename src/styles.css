@@ -343,7 +343,7 @@ img {
 }
 
 .kr-sub-bottom-nav button > span { position: relative; display: grid; place-items: center; }
-.kr-sub-bottom-nav button > span > i { top: -8px; right: -10px; }
+.kr-sub-bottom-nav button > span > i { top: -8px; right: -10px; font-weight: 700; line-height: 1; letter-spacing: 0; }
 .kr-sub-bottom-nav button > b { font-size: var(--kr-font-10); font-weight: var(--kr-weight-semibold); line-height: 1.25; text-align: center; word-break: keep-all; }
 .kr-sub-bottom-nav button.is-active { color: var(--kr-color-brand); }
 
