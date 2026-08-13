@@ -43,7 +43,9 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await capture(page, '01-korail-entry')
 
   await page.getByRole('button', { name: '레일물류' }).click()
-  await expect(page.getByRole('heading', { name: /화물 조건을 등록하고/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: '함께 보내기 네트워크 현황' })).toBeVisible()
+  await expect(page.getByText(/화물 조건을 등록하고/)).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '녹음 시작' })).toHaveCount(0)
   await expect(page.getByText('10/10', { exact: true })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('heading', { name: /내 운송 요청 \d+건/ })).toBeVisible()
   await expect(page.getByRole('region', { name: '내 운송 친환경 포인트' })).toContainText('예상 포인트')
@@ -123,9 +125,9 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
 
 test('refresh keeps the Rail Logistics context instead of resetting to Korail home', async ({ page }) => {
   await page.goto('./#rail-logistics')
-  await expect(page.getByRole('heading', { name: /화물 조건을 등록하고/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: '함께 보내기 네트워크 현황' })).toBeVisible()
   await page.reload()
-  await expect(page.getByRole('heading', { name: /화물 조건을 등록하고/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: '함께 보내기 네트워크 현황' })).toBeVisible()
   await expect(page).toHaveURL(/#rail-logistics$/)
 })
 
@@ -151,49 +153,13 @@ test('320px layout keeps readable spacing without overflow or undersized control
   await page.setViewportSize({ width: 320, height: 700 })
   await page.goto('./')
   await page.getByRole('button', { name: '레일물류' }).click()
-  await expect(page.getByRole('heading', { name: /화물 조건을 등록하고/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: '함께 보내기 네트워크 현황' })).toBeVisible()
   await expectUsableLayout(page)
 
   const gap = await page.evaluate(() => {
-    const hero = document.querySelector('.rp-hero-card').getBoundingClientRect()
+    const network = document.querySelector('.rp-network-card').getBoundingClientRect()
     const heading = document.querySelector('.rp-dashboard .rp-section-heading').getBoundingClientRect()
-    return heading.top - hero.bottom
+    return heading.top - network.bottom
   })
   expect(gap).toBeGreaterThanOrEqual(16)
-})
-
-test('home recording asks for microphone access, records, and opens request step 1 when stopped', async ({ page }) => {
-  await page.addInitScript(() => {
-    window.__microphoneRequests = 0
-    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: {
-      getUserMedia: async (constraints) => {
-        window.__microphoneRequests += constraints.audio ? 1 : 0
-        return { getTracks: () => [{ stop() {} }] }
-      },
-    } })
-
-    window.SpeechRecognition = class {
-      start() {
-        const result = [{ transcript: '아산에서 부산신항까지 보내고 싶어요' }]
-        result.isFinal = true
-        this.onresult?.({
-          resultIndex: 0,
-          results: [result],
-        })
-      }
-      stop() { this.onend?.() }
-      abort() { this.onend?.() }
-    }
-  })
-
-  await page.goto('./#rail-logistics')
-  await page.getByRole('button', { name: '녹음 시작' }).click()
-  await expect(page.getByRole('button', { name: '녹음 종료' })).toBeVisible()
-  await expect.poll(() => page.evaluate(() => window.__microphoneRequests)).toBe(1)
-  await expect(page.getByRole('textbox', { name: '말씀하신 화물 요청' })).toHaveValue('아산에서 부산신항까지 보내고 싶어요')
-  await page.getByRole('button', { name: '녹음 종료' }).click()
-
-  await expect(page.getByText('3단계 중 1단계')).toBeVisible()
-  await expect(page.getByRole('textbox', { name: '음성 인식 텍스트' })).toHaveValue('아산에서 부산신항까지 보내고 싶어요')
-  await expect(page.getByRole('button', { name: '새로운 운송 요청' })).toBeVisible()
 })
