@@ -10,6 +10,7 @@
 - `services/product-api`: Express + PostgreSQL API 및 8318 Responses API 연동
 - `db/schema.sql`: 물류 도메인 스키마와 개발 샘플 데이터
 - `docker-compose.yml`: PostgreSQL, 제품 API, 제품 웹 개발 스택
+- `docs/railfit-public-data.md`: KORAIL·ODCloud 공공데이터 연동 카탈로그
 
 ## 실행
 
