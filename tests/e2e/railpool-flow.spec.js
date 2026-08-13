@@ -94,12 +94,12 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expect(rejectionDialog).toBeHidden()
   await expect(rejectButton).toBeFocused()
 
-  await page.getByRole('button', { name: '이 안을 기준으로 비교' }).first().click()
+  await page.getByRole('button', { name: '원래 계획과 상세 비교' }).first().click()
   await expect(page.getByRole('table', { name: '내 원래 계획과 제안 비교' })).toBeVisible()
   await expect(page.getByRole('rowheader', { name: '전환교통 지원사업' })).toBeVisible()
   await page.getByRole('button', { name: '돌아가기', exact: true }).click()
 
-  await page.getByRole('button', { name: '이 제안으로 진행' }).first().click()
+  await page.getByRole('button', { name: '추천안 적용하기' }).first().click()
   await expect(page.getByText(/곳에서 실시간 확인 중/)).toBeVisible()
   await expect(page.getByRole('heading', { name: '목표 물량을 채웠어요' })).toBeVisible({ timeout: 45_000 })
   await expect(page.locator('.rp-participant-list article')).toHaveCount(5)

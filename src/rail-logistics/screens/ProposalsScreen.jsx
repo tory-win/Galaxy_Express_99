@@ -3,14 +3,13 @@ import { formatManWon } from '../demoData.js'
 import { ConfidenceBadge, Icon, LegalNotice, PrimaryButton, SecondaryButton, StatusPill } from '../components.jsx'
 
 const REJECTION_REASONS = [
-  '출발일을 못 바꿔요',
-  '도착이 늦으면 안 돼요',
-  '화물역을 바꿀 수 없어요',
-  '물량을 나눌 수 없어요',
-  '다음 회차로 못 미뤄요',
-  '운송사를 바꿀 수 없어요',
-  '보관 여유가 없어요',
-  '그냥 다른 안을 보고 싶어요',
+  '출발일 변경 불가',
+  '도착 지연 불가',
+  '화물역 변경 불가',
+  '물량 분할 불가',
+  '다음 회차 이용 불가',
+  '운송사 변경 불가',
+  '보관 여유 없음',
 ]
 
 function ProposalCard({ proposal, baseline, onProceed, onCompare, onReject }) {
@@ -47,16 +46,21 @@ function ProposalCard({ proposal, baseline, onProceed, onCompare, onReject }) {
         </div>
       )}
 
-      <div className="rp-proposal-actions"><PrimaryButton onClick={() => onProceed(proposal)}>이 제안으로 진행</PrimaryButton><SecondaryButton onClick={() => onReject(proposal)}>거절하고 다른 제안 보기</SecondaryButton><button type="button" className="rp-text-button" onClick={() => onCompare(proposal)}>이 안을 기준으로 비교</button></div>
+      <div className="rp-proposal-actions"><PrimaryButton onClick={() => onProceed(proposal)}>추천안 적용하기</PrimaryButton><SecondaryButton onClick={() => onReject(proposal)}>거절하고 다른 제안 보기</SecondaryButton><button type="button" className="rp-text-button" onClick={() => onCompare(proposal)}>원래 계획과 상세 비교</button></div>
     </article>
   )
 }
 
 export function ProposalsScreen({ baseline, proposals, onProceed, onCompare, onReject, onModify }) {
   const [rejecting, setRejecting] = useState(null)
+  const [activeIndex, setActiveIndex] = useState(0)
   const modalRef = useRef(null)
+  const swipeStartRef = useRef(null)
   const previousFocusRef = useRef(null)
   const leadProposal = proposals[0]
+  const activeProposal = proposals[Math.min(activeIndex, proposals.length - 1)]
+
+  useEffect(() => setActiveIndex((index) => Math.min(index, proposals.length - 1)), [proposals.length])
 
   useEffect(() => {
     if (!rejecting) return undefined
@@ -89,7 +93,21 @@ export function ProposalsScreen({ baseline, proposals, onProceed, onCompare, onR
 
   const chooseReason = (reason) => {
     onReject(rejecting, reason)
+    setActiveIndex(0)
     setRejecting(null)
+  }
+
+  const handleSwipeStart = (event) => {
+    swipeStartRef.current = event.touches?.[0]?.clientX ?? event.clientX
+  }
+
+  const handleSwipeEnd = (event) => {
+    if (swipeStartRef.current === null) return
+    const end = event.changedTouches?.[0]?.clientX ?? event.clientX
+    const distance = end - swipeStartRef.current
+    swipeStartRef.current = null
+    if (Math.abs(distance) < 48) return
+    setActiveIndex((index) => distance < 0 ? Math.min(proposals.length - 1, index + 1) : Math.max(0, index - 1))
   }
 
   return (
@@ -105,7 +123,18 @@ export function ProposalsScreen({ baseline, proposals, onProceed, onCompare, onR
         <dl><div><dt>전체 비용</dt><dd>{formatManWon(baseline.cost)}</dd></div><div><dt>전체 시간</dt><dd>{baseline.duration}</dd></div><div><dt>도착 예정</dt><dd>{baseline.arrival}</dd></div></dl>
       </section>
 
-      <div className="rp-proposal-stack">{proposals.map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} baseline={baseline} onProceed={onProceed} onCompare={onCompare} onReject={setRejecting} />)}</div>
+      <nav className="rp-proposal-switcher" aria-label="AI 역제안 빠른 선택">
+        {proposals.map((proposal, index) => (
+          <button type="button" key={proposal.id} aria-current={index === activeIndex ? 'true' : undefined} className={index === activeIndex ? 'is-active' : ''} onClick={() => setActiveIndex(index)}>
+            <small>대안 {index + 1}</small><strong>{proposal.type.replace(' 제안', '')}</strong><span>−{formatManWon(proposal.savings)}</span>
+          </button>
+        ))}
+      </nav>
+      <p className="rp-swipe-hint" aria-live="polite"><span>{activeIndex + 1} / {proposals.length}</span> 좌우로 밀어 다른 제안 보기</p>
+
+      <div className="rp-proposal-stack" onTouchStart={handleSwipeStart} onTouchEnd={handleSwipeEnd}>
+        <ProposalCard key={activeProposal.id} proposal={activeProposal} baseline={baseline} onProceed={onProceed} onCompare={onCompare} onReject={setRejecting} />
+      </div>
 
       <button type="button" className="rp-modify-link" onClick={onModify}>검토 범위 다시 설정하기</button>
       <LegalNotice />

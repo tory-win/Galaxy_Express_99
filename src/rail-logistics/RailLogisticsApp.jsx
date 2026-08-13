@@ -241,7 +241,7 @@ export function RailLogisticsApp({ onExit, onNotify }) {
   const reject = async (proposal, reason) => {
     try {
       await saveProposalDecision(requestId, proposal.id, 'rejected', reason)
-      setProposals((items) => [...items.slice(1), items[0]])
+      setProposals((items) => [...items.filter((item) => item.id !== proposal.id), proposal])
       onNotify?.(`${reason} 의견을 저장하고 다른 제안을 보여드립니다`)
     } catch (rejectError) {
       setError(rejectError.message)
