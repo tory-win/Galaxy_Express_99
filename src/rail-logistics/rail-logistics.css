@@ -824,7 +824,6 @@
 .rp-proposal-actions,
 .rp-pool-actions,
 .rp-review-actions,
-.rp-recovery-actions,
 .rp-sticky-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: var(--kr-space-2); }
 .rp-proposal-actions .rp-tertiary-button,
 .rp-pool-actions .rp-tertiary-button { grid-column: 1 / -1; }
