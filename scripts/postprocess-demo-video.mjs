@@ -1,6 +1,6 @@
 import { chromium } from '@playwright/test'
 import { execFileSync } from 'node:child_process'
-import { copyFile, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -10,116 +10,144 @@ const BASE_VIDEO = process.env.BASE_VIDEO || path.resolve('out/demo_3min_base.mp
 const OUTPUT_DIR = path.resolve(process.env.DEMO_OUTPUT_DIR || 'out')
 const VOICE = process.env.DEMO_VOICE || 'Yuna'
 const VOICE_RATE = process.env.DEMO_VOICE_RATE || '185'
-const TOTAL_SECONDS = 180
+const SOURCE_SHOT_SECONDS = [12, 18, 20, 15, 40, 30, 20, 15, 10]
+const TARGET_SHOT_SECONDS = [10, 12, 12, 10, 24, 20, 12, 12, 8]
+const TOTAL_SECONDS = TARGET_SHOT_SECONDS.reduce((sum, seconds) => sum + seconds, 0)
 
 const cues = [
   {
     start: 0,
-    end: 6,
-    text: '화차 한 량이 채워지는 순간,\n참여한 모든 회사의 단가가 동시에 내려갑니다.',
+    end: 5.3,
+    text: '화차가 채워지면 참여한 화주의\n예상 단가가 함께 내려갑니다.',
   },
   {
-    start: 6,
-    end: 12,
-    text: '이 장면을 만들려고 한 일을\n3분 안에 보여드리겠습니다.',
-    voice: '이 장면을 만들려고 한 일을 삼 분 안에 보여드리겠습니다.',
+    start: 5.3,
+    end: 10,
+    text: 'RAILPOOL AI의 요청부터 검토까지\n핵심 흐름을 빠르게 보겠습니다.',
+    voice: '레일풀 에이아이의 요청부터 검토까지 핵심 흐름을 빠르게 보겠습니다.',
   },
   {
-    start: 12,
-    end: 21,
-    text: '화물이 없는 게 아니라\n조합이 안 맞는 겁니다.',
+    start: 10,
+    end: 15,
+    text: '화물이 없는 게 아니라\n서로 맞는 조합을 찾지 못한 겁니다.',
   },
   {
-    start: 21,
-    end: 30,
-    text: '새 앱을 만들지 않았습니다.\n레일택배 옆 아이콘 하나입니다.',
+    start: 15,
+    end: 22,
+    text: '코레일 앱의 레일물류 아이콘에서\n별도 설치 없이 바로 시작합니다.',
   },
   {
-    start: 30,
+    start: 22,
+    end: 28,
+    text: '전화로 받던 운송 조건을 말하면\nRAILPOOL AI가 항목별로 정리합니다.',
+    voice: '전화로 받던 운송 조건을 말하면 레일풀 에이아이가 항목별로 정리합니다.',
+  },
+  {
+    start: 28,
+    end: 34,
+    text: '출발지·도착지·물량·마감·현재 비용을\n확인하고 필요한 값만 수정합니다.',
+  },
+  {
+    start: 34,
+    end: 39,
+    text: '화주가 양보 가능한 조건을\n먼저 선택합니다.',
+  },
+  {
+    start: 39,
+    end: 44,
+    text: '날짜를 하루 열면 검토 가능한 운송 조합이\n한 가지에서 세 가지가 됩니다.',
+  },
+  {
+    start: 44,
     end: 50,
-    text: '전화로 받던 조건을 그대로 말하면\nRAILPOOL AI가 조건을 정리합니다.',
-    voice: '전화로 받던 조건을 그대로 말하면 레일풀 에이아이가 조건을 정리합니다.',
+    text: '하루만 조정하면\n전체 비용이 18% 낮아집니다.',
+    voice: '하루만 조정하면 전체 비용이 십팔 퍼센트 낮아집니다.',
   },
   {
     start: 50,
-    end: 57.5,
-    text: '화주가 뭘 양보할 수 있는지를\n먼저 물어봅니다.',
+    end: 56,
+    text: '철도 운임만이 아니라 공장에서 항만까지\n전체 운송비를 비교합니다.',
   },
   {
-    start: 57.5,
-    end: 65,
-    text: '하루를 여는 순간\n찾을 수 있는 방법이 3배가 됩니다.',
-    voice: '하루를 여는 순간 찾을 수 있는 방법이 세 배가 됩니다.',
+    start: 56,
+    end: 62,
+    text: '대신 도착은 4시간 늦어집니다.\n비용과 시간 차이를 함께 봅니다.',
+    voice: '대신 도착은 네 시간 늦어집니다. 비용과 시간 차이를 함께 봅니다.',
   },
   {
-    start: 65,
+    start: 62,
+    end: 68,
+    text: '더 저렴한 대안도 마감 위험이 있으면\n추천 순위가 달라질 수 있습니다.',
+  },
+  {
+    start: 68,
+    end: 73,
+    text: '다른 화주의 3TEU가 합류하면\n목표 물량이 채워집니다.',
+    voice: '다른 화주의 삼 티이유가 합류하면 목표 물량이 채워집니다.',
+  },
+  {
+    start: 73,
     end: 78,
-    text: '하루만 옮기시면\n전체 비용이 18% 낮아집니다.',
-    voice: '하루만 옮기시면 전체 비용이 십팔 퍼센트 낮아집니다.',
+    text: '참여 화주 모두의 예상 단가와\n내 예상 비용이 다시 계산됩니다.',
   },
   {
     start: 78,
-    end: 92,
-    text: '철도 운임만이 아니라 공장에서 부산신항까지\n전체 비용을 비교한 결과입니다.',
+    end: 83,
+    text: '참여사는 권역과 물량만 보이며\n회사명·품목·상세 주소는 비공개입니다.',
   },
   {
-    start: 92,
-    end: 105,
-    text: '대신 도착이 4시간 늦어집니다.\n그 차이도 함께 보여드립니다.',
-    voice: '대신 도착이 네 시간 늦어집니다. 그 차이도 함께 보여드립니다.',
+    start: 83,
+    end: 88,
+    text: '마감까지 목표를 못 채우면 자동 취소되며\n비용은 발생하지 않습니다.',
   },
   {
-    start: 105,
-    end: 115,
-    text: '같은 시각 다른 화주가\n3TEU를 등록합니다.',
-    voice: '같은 시각 다른 화주가 삼 티이유를 등록합니다.',
+    start: 88,
+    end: 94,
+    text: '참여·이탈·일정 변경은\n푸시와 변동 알림으로 확인합니다.',
   },
   {
-    start: 115,
-    end: 125,
-    text: '화차가 채워지고\n참여한 화주 모두의 단가가 내려갑니다.',
+    start: 94,
+    end: 100,
+    text: '메일보다 빠른 알림이 필요한 이유이자\n코레일 앱 안에 있어야 하는 이유입니다.',
   },
   {
-    start: 125,
-    end: 135,
-    text: '이 로직은 다른 구간에도\n그대로 적용됩니다.',
+    start: 100,
+    end: 104,
+    text: '이 단계는 예약이 아니라\n코레일 검토 요청입니다.',
   },
   {
-    start: 135,
-    end: 145,
-    text: '메일은 안 봅니다.\n푸시는 봅니다.',
+    start: 104,
+    end: 108,
+    text: '운송 가능 여부와 최종 운임은\n코레일 담당자가 확정합니다.',
   },
   {
-    start: 145,
-    end: 155,
-    text: '이게 코레일 앱 안에 있어야 하는\n이유입니다.',
+    start: 108,
+    end: 113,
+    text: '비용·시간·탄소는 예상값입니다.\n필수 확인과 협약 조건도 보세요.',
   },
   {
-    start: 155,
-    end: 162.5,
-    text: '예약하지 않습니다.\n검토를 요청합니다.',
-  },
-  {
-    start: 162.5,
-    end: 170,
-    text: '확정은 코레일 담당자가 합니다.',
-  },
-  {
-    start: 170,
-    end: 175,
-    text: '저희는 화물을 철도로 밀어 넣는\n서비스가 아닙니다.',
-  },
-  {
-    start: 175,
-    end: 180,
-    text: '흩어진 화물과 비어 있는 자리를 이어붙여,\n철도가 성립하는 조건을 먼저 만듭니다.',
+    start: 113,
+    end: 120,
+    text: '흩어진 화물과 빈 자리를 연결해\n철도가 성립하는 조건을 먼저 만듭니다.',
   },
 ]
 
 const keyOverlays = [
-  { start: 4, end: 12, title: '15/18 → 18/18 TEU', detail: '1TEU당 61만원' },
-  { start: 80, end: 105, title: '312만원 → 256만원', detail: '−56만원 / −18%' },
-  { start: 115, end: 135, title: '18/18 TEU 달성', detail: '내 비용 243만원' },
+  { start: 3.3, end: 10, title: '15/18 → 18/18 TEU', detail: '1TEU당 61만원' },
+  { start: 53, end: 68, title: '312만원 → 256만원', detail: '−56만원 / −18%' },
+  { start: 74.7, end: 88, title: '18/18 TEU 달성', detail: '내 비용 243만원' },
+]
+
+const manualOverlays = [
+  { start: 0, end: 10, number: '01', title: '함께 보내기 효과', checks: ['모집률·단가·참여 화물', '목표 달성 시 단가 재계산'] },
+  { start: 10, end: 22, number: '02', title: '코레일 앱 진입', checks: ['레일택배 옆 레일물류 아이콘', '별도 앱 설치 없음'] },
+  { start: 22, end: 34, number: '03', title: 'AI 운송 요청', checks: ['음성·조건·문서 입력', '핵심 필드 확인 후 수정'] },
+  { start: 34, end: 44, number: '04', title: '검토 범위 설정', checks: ['날짜·분할·직송 허용 범위', '허용 범위가 조합 수를 결정'] },
+  { start: 44, end: 68, number: '05', title: '제안 비교', checks: ['전체 비용·소요시간·탄소', '더 싼 안의 마감 위험까지 비교'] },
+  { start: 68, end: 88, number: '06', title: '익명 공동 운송', checks: ['권역·TEU만 익명 공개', '목표 미달 시 자동 취소·비용 없음'] },
+  { start: 88, end: 100, number: '07', title: '실시간 알림', checks: ['참여·이탈·일정 변경', '푸시 알림에서 즉시 확인'] },
+  { start: 100, end: 113, number: '08', title: '코레일 검토 요청', checks: ['예약이 아닌 검토 요청', '예상값·필수 확인·협약 조건'] },
+  { start: 113, end: 120, number: '09', title: '최종 확정 원칙', checks: ['코레일 담당자 최종 확정', '가상 데이터 기반 시연'] },
 ]
 
 function run(command, args, options = {}) {
@@ -182,40 +210,86 @@ async function createOverlayImages(workDir) {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })
   const images = []
 
-  const watermarkPath = path.join(workDir, 'overlay-watermark.png')
-  await renderOverlay(page, watermarkPath, `
-    <div style="position:absolute;right:36px;bottom:15px;padding:4px 12px;border-radius:10px;background:rgba(18,24,38,.62);color:rgba(255,255,255,.92);font-size:20px;font-weight:600;letter-spacing:-.2px;">
-      가상 데이터 기반 시연 화면입니다
-    </div>`)
-  images.push({ filePath: watermarkPath })
-
   for (const [index, cue] of cues.entries()) {
-    const cuePath = path.join(workDir, `overlay-caption-${String(index + 1).padStart(2, '0')}.png`)
+    const cuePath = path.join(workDir, `overlay-combined-${String(index + 1).padStart(2, '0')}.png`)
+    const midpoint = (cue.start + cue.end) / 2
+    const manual = manualOverlays.find((item) => midpoint >= item.start && midpoint < item.end)
+    const key = keyOverlays.find((item) => cue.end > item.start && cue.start < item.end)
     const lines = cue.text.split('\n').map(escapeHtml).join('<br>')
+    const checks = manual.checks
+      .map((check) => `<div style="display:flex;align-items:flex-start;gap:12px;"><span style="color:#2563eb;font-weight:900;">✓</span><span>${escapeHtml(check)}</span></div>`)
+      .join('')
+    const keyMarkup = key
+      ? `<div style="position:absolute;left:84px;top:282px;width:560px;padding:26px 30px;border-radius:24px;background:rgba(255,255,255,.94);border:2px solid rgba(37,99,235,.20);box-shadow:0 16px 40px rgba(15,23,42,.12);">
+          <div style="color:#0f172a;font-size:42px;line-height:1.12;font-weight:800;letter-spacing:-1.2px;white-space:nowrap;">${escapeHtml(key.title)}</div>
+          <div style="margin-top:12px;color:#2563eb;font-size:32px;line-height:1.15;font-weight:800;letter-spacing:-.7px;white-space:nowrap;">${escapeHtml(key.detail)}</div>
+        </div>`
+      : ''
     await renderOverlay(page, cuePath, `
+      <div style="position:absolute;left:84px;top:64px;display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:999px;background:rgba(37,99,235,.94);box-shadow:0 10px 28px rgba(37,99,235,.20);color:white;font-size:24px;font-weight:800;letter-spacing:-.4px;">
+        <span style="opacity:.78;">STEP ${escapeHtml(manual.number)}</span>
+        <span>${escapeHtml(manual.title)}</span>
+      </div>
+      ${keyMarkup}
+      <div style="position:absolute;left:1276px;top:246px;width:560px;padding:26px 28px;border-radius:24px;background:rgba(255,255,255,.95);border:1px solid rgba(15,23,42,.08);box-shadow:0 18px 48px rgba(15,23,42,.12);">
+        <div style="color:#64748b;font-size:20px;font-weight:800;letter-spacing:.02em;">이 화면에서 확인</div>
+        <div style="margin-top:12px;color:#0f172a;font-size:32px;line-height:1.2;font-weight:800;letter-spacing:-.8px;">${escapeHtml(manual.title)}</div>
+        <div style="display:grid;gap:13px;margin-top:20px;color:#334155;font-size:25px;line-height:1.28;font-weight:700;letter-spacing:-.45px;">${checks}</div>
+      </div>
       <div style="position:absolute;left:250px;top:902px;width:1420px;height:118px;display:flex;align-items:center;justify-content:center;padding:10px 40px;border-radius:22px;background:rgba(15,23,42,.88);box-shadow:0 10px 30px rgba(15,23,42,.18);color:white;text-align:center;font-size:38px;line-height:1.24;font-weight:700;letter-spacing:-.7px;">
         <div>${lines}</div>
+      </div>
+      <div style="position:absolute;right:36px;bottom:15px;padding:4px 12px;border-radius:10px;background:rgba(18,24,38,.62);color:rgba(255,255,255,.92);font-size:20px;font-weight:600;letter-spacing:-.2px;">
+        가상 데이터 기반 시연 화면입니다
       </div>`)
     images.push({ filePath: cuePath, start: cue.start, end: cue.end })
-  }
-
-  for (const [index, key] of keyOverlays.entries()) {
-    const keyPath = path.join(workDir, `overlay-key-${index + 1}.png`)
-    await renderOverlay(page, keyPath, `
-      <div style="position:absolute;left:84px;top:282px;width:560px;padding:26px 30px;border-radius:24px;background:rgba(255,255,255,.94);border:2px solid rgba(37,99,235,.20);box-shadow:0 16px 40px rgba(15,23,42,.12);">
-        <div style="color:#0f172a;font-size:42px;line-height:1.12;font-weight:800;letter-spacing:-1.2px;white-space:nowrap;">${escapeHtml(key.title)}</div>
-        <div style="margin-top:12px;color:#2563eb;font-size:32px;line-height:1.15;font-weight:800;letter-spacing:-.7px;white-space:nowrap;">${escapeHtml(key.detail)}</div>
-      </div>`)
-    images.push({ filePath: keyPath, start: key.start, end: key.end })
   }
 
   await browser.close()
   return images
 }
 
-async function createCaptionedVideo(workDir, overlayImages) {
+async function createTimelineVideo(workDir) {
+  const timelinePath = path.join(workDir, 'demo-showcase-timeline.mp4')
+  const filters = []
+  const inputs = []
+  let sourceStart = 0
+
+  for (let index = 0; index < SOURCE_SHOT_SECONDS.length; index += 1) {
+    const sourceSeconds = SOURCE_SHOT_SECONDS[index]
+    const targetSeconds = TARGET_SHOT_SECONDS[index]
+    const ratio = targetSeconds / sourceSeconds
+    filters.push(
+      `[0:v]trim=start=${sourceStart}:duration=${sourceSeconds},setpts=(PTS-STARTPTS)*${ratio.toFixed(9)}[shot${index}]`,
+    )
+    inputs.push(`[shot${index}]`)
+    sourceStart += sourceSeconds
+  }
+
+  filters.push(
+    `${inputs.join('')}concat=n=${inputs.length}:v=1:a=0,fps=30,tpad=stop_mode=clone:stop_duration=1,trim=duration=${TOTAL_SECONDS},setpts=PTS-STARTPTS,format=yuv420p[timeline]`,
+  )
+  run(FFMPEG, [
+    '-y',
+    '-i', BASE_VIDEO,
+    '-filter_complex', filters.join(';'),
+    '-map', '[timeline]',
+    '-an',
+    '-frames:v', String(TOTAL_SECONDS * 30),
+    '-r', '30',
+    '-c:v', 'libx264',
+    '-preset', 'medium',
+    '-crf', '16',
+    '-pix_fmt', 'yuv420p',
+    '-movflags', '+faststart',
+    timelinePath,
+  ])
+  return timelinePath
+}
+
+async function createCaptionedVideo(workDir, timelinePath, overlayImages) {
   const captionedPath = path.join(workDir, 'demo-captioned.mp4')
-  const args = ['-y', '-i', BASE_VIDEO]
+  const args = ['-y', '-i', timelinePath]
   for (const overlay of overlayImages) {
     args.push('-loop', '1', '-framerate', '30', '-i', overlay.filePath)
   }
@@ -305,16 +379,18 @@ async function writeTextArtifacts(timings) {
     `${srtTimestamp(cue.start)} --> ${srtTimestamp(cue.end)}`,
     cue.text,
   ].join('\n')).join('\n\n') + '\n'
-  await writeFile(path.join(OUTPUT_DIR, 'demo_3min.srt'), srt)
+  await writeFile(path.join(OUTPUT_DIR, 'demo_showcase.srt'), srt)
 
   const timingByIndex = new Map(timings.map((timing) => [timing.index, timing]))
   const narration = [
-    '# RAILPOOL AI 3분 시연 내레이션',
+    '# RAILPOOL AI 시연 영상 내레이션',
     '',
     `- 음성: macOS 한국어 ${VOICE}`,
     `- 기본 속도: ${VOICE_RATE}`,
+    `- 최종 길이: ${TOTAL_SECONDS}초`,
     '- 배경 음악: 없음',
     '- 자막은 휴대폰 화면 아래 여백에만 표시',
+    '- 별도 매뉴얼 패널은 녹화하지 않고 좌우 여백의 단계·확인 카드로 설명',
     '',
     '| 구간 | 화면 자막·내레이션 | 원음 길이 | 속도 보정 |',
     '| --- | --- | ---: | ---: |',
@@ -334,13 +410,14 @@ async function main() {
   await mkdir(OUTPUT_DIR, { recursive: true })
   await readFile(BASE_VIDEO)
   const workDir = await mkdtemp(path.join(tmpdir(), 'railpool-postprocess-'))
+  const timelinePath = await createTimelineVideo(workDir)
   const overlayImages = await createOverlayImages(workDir)
   const [captionedPath, narration] = await Promise.all([
-    createCaptionedVideo(workDir, overlayImages),
+    createCaptionedVideo(workDir, timelinePath, overlayImages),
     createNarration(workDir),
   ])
 
-  const outputPath = path.join(OUTPUT_DIR, 'demo_3min.mp4')
+  const outputPath = path.join(OUTPUT_DIR, 'demo_showcase.mp4')
   run(FFMPEG, [
     '-y',
     '-i', captionedPath,
@@ -356,20 +433,24 @@ async function main() {
     '-movflags', '+faststart',
     outputPath,
   ])
-  await copyFile(BASE_VIDEO, path.join(OUTPUT_DIR, 'demo_3min_base.mp4'))
   await writeTextArtifacts(narration.timings)
 
   const result = {
-    outputPath,
-    baseVideo: BASE_VIDEO,
-    workDir,
+    title: 'RAILPOOL AI 시연 영상',
+    outputPath: path.relative(process.cwd(), outputPath),
+    baseVideo: path.relative(process.cwd(), BASE_VIDEO),
     duration: probeDuration(outputPath),
+    width: 1920,
+    height: 1080,
+    fps: 30,
     voice: VOICE,
     voiceRate: Number(VOICE_RATE),
     cues: cues.length,
+    manualPanelRecorded: false,
+    manualOverlaySteps: manualOverlays.length,
   }
-  await writeFile(path.join(OUTPUT_DIR, 'postprocess-metadata.json'), `${JSON.stringify(result, null, 2)}\n`)
-  console.log(JSON.stringify(result, null, 2))
+  await writeFile(path.join(OUTPUT_DIR, 'showcase-metadata.json'), `${JSON.stringify(result, null, 2)}\n`)
+  console.log(JSON.stringify({ ...result, workDir }, null, 2))
 }
 
 await main()

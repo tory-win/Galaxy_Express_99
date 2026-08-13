@@ -1,0 +1,14 @@
+{
+  "title": "RAILPOOL AI 시연 영상",
+  "outputPath": "out/demo_showcase.mp4",
+  "baseVideo": "out/demo_3min_base.mp4",
+  "duration": 120,
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "voice": "Yuna",
+  "voiceRate": 185,
+  "cues": 22,
+  "manualPanelRecorded": false,
+  "manualOverlaySteps": 9
+}
