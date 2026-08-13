@@ -57,7 +57,7 @@ export function DashboardScreen({ requests, network, liveStatus, busy, onNewRequ
       {totalEcoPoints > 0 && (
         <section className="rp-eco-points" aria-label="내 운송 친환경 포인트">
           <span className="rp-eco-points__icon"><Icon name="leaf" size={19} /></span>
-          <div><small>친환경 포인트</small><strong>{new Intl.NumberFormat('ko-KR').format(totalEcoPoints)}P</strong></div>
+          <div><small>예상 포인트</small><strong>{new Intl.NumberFormat('ko-KR').format(totalEcoPoints)}P</strong></div>
           <p>철도 전환 시 예상 CO₂ 절감량 기준<br /><span>1kg 절감 = 1P</span></p>
         </section>
       )}

@@ -46,7 +46,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expect(page.getByRole('heading', { name: /화물 조건을 등록하고/ })).toBeVisible()
   await expect(page.getByText('10/10', { exact: true })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('heading', { name: /내 운송 요청 \d+건/ })).toBeVisible()
-  await expect(page.getByRole('region', { name: '내 운송 친환경 포인트' })).toContainText('예상 친환경 포인트')
+  await expect(page.getByRole('region', { name: '내 운송 친환경 포인트' })).toContainText('예상 포인트')
   await expect(page.getByRole('region', { name: '내 운송 친환경 포인트' })).toContainText('1kg 절감 = 1P')
   const requestFilters = page.getByRole('group', { name: '내 운송 요청 상황별 필터' })
   await expect(requestFilters.getByRole('button')).toHaveCount(5)
