@@ -119,6 +119,23 @@ test('refresh keeps the Rail Logistics context instead of resetting to Korail ho
   await expect(page).toHaveURL(/#rail-logistics$/)
 })
 
+test('request method order and searchable public-data stations are keyboard usable', async ({ page }) => {
+  await page.goto('./#rail-logistics')
+  await page.getByRole('button', { name: /새 화물 추가하기/ }).first().click()
+
+  const methods = page.locator('.rp-segmented button')
+  await expect(methods).toHaveText(['전화·음성', '조건 선택', '이메일·문서'])
+  await page.getByRole('button', { name: '조건 선택' }).click()
+
+  const origin = page.getByRole('combobox', { name: /출발지/ })
+  await origin.fill('부산신항역')
+  await expect(page.getByRole('option', { name: /부산신항역/ })).toBeVisible()
+  await origin.press('ArrowDown')
+  await origin.press('Enter')
+  await expect(origin).toHaveValue('부산신항')
+  await expect(page.getByText(/공공데이터포털 · 한국철도공사 화물역 데이터/).first()).toBeVisible()
+})
+
 test('320px layout keeps readable spacing without overflow or undersized controls', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 })
   await page.goto('./')

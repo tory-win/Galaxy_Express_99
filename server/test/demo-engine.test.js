@@ -20,14 +20,29 @@ test('does not approve hazardous freight automatically', () => {
   assert.equal(result.hazardous, true)
 })
 
-test('builds two ranked counterproposals from the baseline cost', () => {
-  const proposals = buildProposals({ roadCost: 3_120_000 })
+test('builds two ranked proposals from the baseline and live network capacity', () => {
+  const proposals = buildProposals(
+    { roadCost: 3_120_000, teu: 4, departureDate: '2026-08-18', deadline: '2026-08-20T09:00', destination: '부산신항' },
+    'R-TEST',
+    { matchingAgents: 8, matchingTeu: 24, publicDataConnected: true },
+  )
   assert.equal(proposals.length, 2)
   assert.equal(proposals[0].savingsRate, 18)
   assert.equal(proposals[0].cost, 2_560_000)
   assert.equal(proposals[1].savingsRate, 22)
   assert.ok(proposals[1].cost < proposals[0].cost)
+  assert.equal(proposals[0].matchingAgents, 8)
+  assert.equal(proposals[0].pooledTeu, 18)
+  assert.match(proposals[0].reason, /24TEU/)
+  assert.ok(proposals[0].confidence.includes('철도 시간표 확인 완료'))
+  assert.equal(proposals[0].breakdown.reduce((sum, [, value]) => sum + value, 0), proposals[0].cost)
   assert.equal(proposals[0].breakdown[2][2], '확인 필요')
+})
+
+test('does not invent unsupported freight values during rule extraction', () => {
+  const result = extractConditionsFromText('일반 화물을 보내고 싶습니다.')
+  assert.deepEqual(result.fields, {})
+  assert.deepEqual(result.missing, ['origin', 'destination', 'containerCount', 'departureDate', 'deadline', 'hazardous'])
 })
 
 test('normalizes AI extraction before values reach the freight form', () => {

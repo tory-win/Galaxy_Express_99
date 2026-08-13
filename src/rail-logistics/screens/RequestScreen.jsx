@@ -24,6 +24,7 @@ function StepIndicator({ step }) {
 function StationCombobox({ id, value, onChange, placeholder }) {
   const [query, setQuery] = useState(value)
   const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const containerRef = useRef(null)
 
   useEffect(() => setQuery(value), [value])
@@ -35,11 +36,13 @@ function StationCombobox({ id, value, onChange, placeholder }) {
     return () => document.removeEventListener('pointerdown', close)
   }, [])
 
-  const matches = FREIGHT_STATIONS.filter((station) => station.includes(query.trim())).slice(0, 12)
+  const normalizedQuery = query.trim().replace(/역$/, '')
+  const matches = FREIGHT_STATIONS.filter((station) => station.includes(normalizedQuery)).slice(0, 12)
   const selectStation = (station) => {
     setQuery(station)
     onChange(station)
     setOpen(false)
+    setActiveIndex(-1)
   }
 
   return (
@@ -50,6 +53,7 @@ function StationCombobox({ id, value, onChange, placeholder }) {
         aria-autocomplete="list"
         aria-expanded={open}
         aria-controls={`${id}-options`}
+        aria-activedescendant={activeIndex >= 0 ? `${id}-option-${activeIndex}` : undefined}
         autoComplete="off"
         value={query}
         placeholder={placeholder}
@@ -58,20 +62,30 @@ function StationCombobox({ id, value, onChange, placeholder }) {
           setQuery(event.target.value)
           onChange('')
           setOpen(true)
+          setActiveIndex(-1)
         }}
         onKeyDown={(event) => {
           if (event.key === 'Escape') setOpen(false)
-          if (event.key === 'Enter' && open && matches.length === 1) {
+          if (event.key === 'ArrowDown' && matches.length) {
             event.preventDefault()
-            selectStation(matches[0])
+            setOpen(true)
+            setActiveIndex((current) => Math.min(current + 1, matches.length - 1))
+          }
+          if (event.key === 'ArrowUp' && matches.length) {
+            event.preventDefault()
+            setActiveIndex((current) => Math.max(current - 1, 0))
+          }
+          if (event.key === 'Enter' && open && (activeIndex >= 0 || matches.length === 1)) {
+            event.preventDefault()
+            selectStation(matches[activeIndex >= 0 ? activeIndex : 0])
           }
         }}
       />
       <SearchIcon size={16} />
       {open && (
         <div className="rp-station-options" id={`${id}-options`} role="listbox">
-          {matches.length ? matches.map((station) => (
-            <button type="button" role="option" aria-selected={value === station} key={station} onClick={() => selectStation(station)}>
+          {matches.length ? matches.map((station, index) => (
+            <button type="button" id={`${id}-option-${index}`} role="option" aria-selected={value === station} className={activeIndex === index ? 'is-highlighted' : ''} key={station} onMouseEnter={() => setActiveIndex(index)} onClick={() => selectStation(station)}>
               <strong>{station}역</strong><small>철도 화물 취급역</small>
             </button>
           )) : <p>일치하는 화물역이 없습니다.</p>}
@@ -196,13 +210,13 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
           <SectionHeading eyebrow="STEP 1" title="보내실 화물을 알려주세요" />
           <div className="rp-segmented" aria-label="운송 조건 입력 방법">
             <button type="button" aria-pressed={mode === 'voice'} className={mode === 'voice' ? 'is-active' : ''} onClick={() => setMode('voice')}>전화·음성</button>
-            <button type="button" aria-pressed={mode === 'direct'} className={mode === 'direct' ? 'is-active' : ''} onClick={() => setMode('direct')}>항목별 입력</button>
+            <button type="button" aria-pressed={mode === 'direct'} className={mode === 'direct' ? 'is-active' : ''} onClick={() => setMode('direct')}>조건 선택</button>
             <button type="button" aria-pressed={mode === 'email'} className={mode === 'email' ? 'is-active' : ''} onClick={() => setMode('email')}>이메일·문서</button>
           </div>
 
           {(mode === 'email' || mode === 'voice') && (
             <section className="rp-paste-card">
-              <div className="rp-paste-card__heading"><span><Icon name={mode === 'voice' ? 'phone' : 'mail'} size={17} /></span><div><strong>{mode === 'voice' ? '전화 문의를 들으며 받아쓰세요' : '사내 메일을 그대로 붙여넣으세요'}</strong><small>{mode === 'voice' ? '발음이 불분명해도 먼저 텍스트로 옮긴 뒤 AI가 운송 조건을 해석합니다.' : '원문에 없는 값은 만들지 않고 확인 필요로 남깁니다.'}</small></div></div>
+              <div className="rp-paste-card__heading"><span><Icon name={mode === 'voice' ? 'phone' : 'mail'} size={17} /></span><div><strong>{mode === 'voice' ? '전화 문의를 들으며 받아쓰세요' : '사내 메일을 그대로 붙여넣으세요'}</strong><small>{mode === 'voice' ? '말씀하신 내용을 텍스트로 옮겨 운송 조건을 정리합니다.' : '원문에 없는 값은 만들지 않고 확인 필요로 남깁니다.'}</small></div></div>
               {mode === 'voice' && (
                 <>
                   <div className="rp-voice-controls">
@@ -211,12 +225,12 @@ export function RequestScreen({ onAnalyze, onExtract, busy }) {
                     </button>
                     <small>{speechSupported ? (listening ? '말씀하신 내용이 아래에 실시간으로 표시됩니다.' : '마이크 사용 권한이 필요합니다.') : '이 브라우저에서는 직접 텍스트를 입력해 주세요.'}</small>
                   </div>
-                  <aside className="rp-voice-privacy"><strong>기본 설정: 음성 파일은 저장하지 않음</strong><p>AI 해석 결과와 수정한 텍스트만 요청 기록에 남습니다. 실제 통화 녹음은 사전 고지·동의, 보관 기간과 접근 권한에 대한 법무·보안 검토 후 별도로 제공해야 합니다.</p></aside>
+                  <aside className="rp-voice-privacy"><strong>음성 파일은 저장하지 않습니다</strong><p>받아쓴 내용과 사용자가 수정한 운송 조건만 요청 기록에 남습니다.</p></aside>
                 </>
               )}
               <textarea aria-label={mode === 'voice' ? '음성 인식 텍스트' : '메일 또는 문서 내용'} value={emailText} onChange={(event) => setEmailText(event.target.value)} placeholder={mode === 'voice' ? '예: 아산에서 부산신항까지 20피트 4개, 8월 18일 출발이요…' : '출발지, 도착지, 수량, 날짜가 포함된 메일 내용을 붙여넣어 주세요.'} />
               {mode === 'email' && <button type="button" className="rp-sample-button" onClick={() => setEmailText(EXAMPLE_EMAIL)}>예시 메일 불러오기</button>}
-              <PrimaryButton disabled={busy || listening || !emailText.trim()} onClick={handleExtract}>{busy ? '조건을 읽는 중…' : mode === 'voice' ? 'AI로 해석하고 조건 입력' : '조건 자동 입력'}</PrimaryButton>
+              <PrimaryButton disabled={busy || listening || !emailText.trim()} onClick={handleExtract}>{busy ? '조건을 읽는 중…' : mode === 'voice' ? '받아쓴 내용으로 조건 입력' : '조건 자동 입력'}</PrimaryButton>
               {extracted && (
                 <div className="rp-extracted-summary">
                   <strong><Icon name="check" size={14} /> 6개 필수 항목을 인식했습니다</strong>

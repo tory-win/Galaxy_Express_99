@@ -30,7 +30,7 @@ for (const [label, pattern] of cssRules) {
 
 const visibleSources = [{ name: 'RailLogisticsApp.jsx', source: railApp }, { name: 'components.jsx', source: railComponents }, ...screenSources]
 for (const { name, source } of visibleSources) {
-  if (/RAILPOOL AI|Icon name="spark"|시연용|가상 물량/.test(source)) violations.push(`${name}: user-facing AI/demo decoration`)
+  if (/RAILPOOL AI|Icon name="spark"|시연용|가상 물량|AI가|AI로|AI에게|AI 해석/.test(source)) violations.push(`${name}: user-facing AI/demo decoration`)
 }
 
 if (!railComponents.includes("from '../design-system/index.js'")) {
