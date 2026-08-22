@@ -48,6 +48,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await expect(page.getByText(/화물 조건을 등록하고/)).toHaveCount(0)
   await expect(page.getByRole('button', { name: '녹음 시작' })).toHaveCount(0)
   await expect(page.getByText('10/10', { exact: true })).toBeVisible({ timeout: 15_000 })
+  await expect(page.locator('.gx-manual-panel')).toHaveAttribute('data-manual-context', 'rail-dashboard')
   await expect(page.getByRole('heading', { name: '내 운송 요청 0건' })).toBeVisible()
   await expect(page.getByText('아직 운송 요청이 없습니다')).toBeVisible()
   const createRequestLink = page.locator('.rp-create-request-link')
@@ -64,6 +65,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
   await capture(page, '02-railpool-dashboard')
 
   await createRequestLink.click()
+  await expect(page.locator('.gx-manual-panel')).toHaveAttribute('data-manual-context', 'rail-request')
   await expect(page.getByRole('region', { name: 'RAILPOOL AI가 하는 일' })).toBeVisible()
   await expect(page.locator('.rp-form-actions')).toHaveCount(0)
   await page.getByRole('button', { name: '이메일·문서' }).click()
@@ -87,6 +89,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
 
   await page.getByRole('button', { name: 'AI로 운송 방법 찾기' }).click()
   await expect(page.getByText(/현재 계획보다/).first()).toBeVisible()
+  await expect(page.locator('.gx-manual-panel')).toHaveAttribute('data-manual-context', 'rail-proposals')
   await expect(page.getByText('RAILPOOL AI 추천 결과')).toBeVisible()
   createdRequestId = await page.evaluate(() => window.sessionStorage.getItem('railpool:requestId'))
   await expect(page.getByText(/KORAIL·ODCloud 공공데이터/)).toHaveCount(0)
@@ -107,11 +110,13 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
 
   await page.getByRole('button', { name: '원래 계획과 상세 비교' }).first().click()
   await expect(page.getByRole('table', { name: '내 원래 계획과 제안 비교' })).toBeVisible()
+  await expect(page.locator('.gx-manual-panel')).toHaveAttribute('data-manual-context', 'rail-compare')
   await expect(page.getByRole('rowheader', { name: '전환교통 지원사업' })).toBeVisible()
   await page.getByRole('button', { name: '돌아가기', exact: true }).click()
 
   await page.getByRole('button', { name: '추천안 적용하기' }).first().click()
   await expect(page.getByText(/곳에서 실시간 확인 중/)).toBeVisible()
+  await expect(page.locator('.gx-manual-panel')).toHaveAttribute('data-manual-context', 'rail-pool')
   await expect(page.getByRole('heading', { name: '목표 물량을 채웠어요' })).toBeVisible({ timeout: 45_000 })
   await expect(page.locator('.rp-participant-list article')).toHaveCount(5)
   await expectUsableLayout(page)
@@ -123,6 +128,7 @@ test('Korail entry opens the complete live Rail Logistics flow', async ({ page }
 
   await page.getByRole('button', { name: '코레일에 검토 요청 보내기' }).click()
   await expect(page.getByText('이 단계는 예약이 아닙니다', { exact: true })).toBeVisible()
+  await expect(page.locator('.gx-manual-panel')).toHaveAttribute('data-manual-context', 'rail-review')
   await expectUsableLayout(page)
   await page.getByRole('button', { name: '검토 요청 보내기' }).click()
   await expect(page.getByRole('heading', { name: '검토 요청이 전달되었습니다' })).toBeVisible()
@@ -163,6 +169,13 @@ test('request method order and searchable public-data stations are keyboard usab
 test('320px layout keeps readable spacing without overflow or undersized controls', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 })
   await page.goto('./')
+  const requestId = await page.evaluate(async () => {
+    const response = await fetch('./api/v1/requests')
+    const result = await response.json()
+    return result.requests?.find((request) => Number(request.ecoPoints) > 0)?.id ?? ''
+  })
+  expect(requestId).not.toBe('')
+  await page.evaluate((id) => window.localStorage.setItem('railpool:ownRequestIds', JSON.stringify([id])), requestId)
   await page.getByRole('button', { name: '레일물류' }).click()
   await expect(page.getByRole('region', { name: '함께 보내기 네트워크 현황' })).toBeVisible()
   await expectUsableLayout(page)

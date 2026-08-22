@@ -92,7 +92,7 @@ function readSavedRequestId() {
   return window.sessionStorage.getItem('railpool:requestId') ?? ''
 }
 
-export function RailLogisticsApp({ onExit, onNotify }) {
+export function RailLogisticsApp({ onExit, onNotify, onViewChange }) {
   const demoMode = new URLSearchParams(window.location.search).get('demo') === '1'
   const [view, setView] = useState(readSavedView)
   const [requests, setRequests] = useState([])
@@ -215,6 +215,10 @@ export function RailLogisticsApp({ onExit, onNotify }) {
     bodyRef.current?.scrollTo({ top: 0, behavior: 'auto' })
     bodyRef.current?.focus({ preventScroll: true })
   }, [view])
+
+  useEffect(() => {
+    onViewChange?.(view)
+  }, [onViewChange, view])
 
   useEffect(() => {
     if (!cancelDialogOpen) return undefined

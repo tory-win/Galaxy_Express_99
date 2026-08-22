@@ -9,6 +9,7 @@ import { TicketsScreen } from './screens/TicketsScreen.jsx'
 import { TravelScreen } from './screens/TravelScreen.jsx'
 import { RailLogisticsApp } from './rail-logistics/RailLogisticsApp.jsx'
 import { assetUrl } from './lib/assets.js'
+import { ContextualManual } from './manual/ContextualManual.jsx'
 
 const BASE_WIDTH = 318
 const BASE_HEIGHT = 701
@@ -51,6 +52,7 @@ function App() {
   const [ticketFilter, setTicketFilter] = useState('전체')
   const [travelQuery, setTravelQuery] = useState('')
   const [travelRegion, setTravelRegion] = useState('전국')
+  const [railView, setRailView] = useState('dashboard')
   const [toast, setToast] = useState('')
   const [cartOpen, setCartOpen] = useState(false)
   const toastTimer = useRef(null)
@@ -97,57 +99,60 @@ function App() {
   const screenProps = { onNotify: notify, onCart: () => setCartOpen(true) }
 
   return (
-    <PhoneCanvas>
-      <div className="kr-app-shell">
-        {screen === 'home' && <HomeScreen {...screenProps} onOpenBenefits={openBenefits} onOpenRailLogistics={openRailLogistics} />}
-        {screen === 'mobility' && <MobilityScreen {...screenProps} onOpenRailLogistics={openRailLogistics} />}
-        {screen === 'travel' && (
-          <TravelScreen
-            {...screenProps}
-            query={travelQuery}
-            setQuery={setTravelQuery}
-            region={travelRegion}
-            setRegion={setTravelRegion}
-          />
-        )}
-        {screen === 'tickets' && (
-          <TicketsScreen
-            onCart={() => setCartOpen(true)}
-            tab={ticketTab}
-            setTab={setTicketTab}
-            filter={ticketFilter}
-            setFilter={setTicketFilter}
-          />
-        )}
-        {screen === 'menu' && (
-          <MenuScreen
-            {...screenProps}
-            onOpenBenefits={openBenefits}
-            onHome={() => setScreen('home')}
-          />
-        )}
-        {screen === 'benefits' && (
-          <BenefitsScreen activeTab={benefitTab} setActiveTab={setBenefitTab} onBack={() => setScreen(returnScreen)} />
-        )}
-        {screen === 'rail-logistics' && <RailLogisticsApp onExit={closeRailLogistics} onNotify={notify} />}
+    <div className="gx-demo-workspace">
+      <PhoneCanvas>
+        <div className="kr-app-shell">
+          {screen === 'home' && <HomeScreen {...screenProps} onOpenBenefits={openBenefits} onOpenRailLogistics={openRailLogistics} />}
+          {screen === 'mobility' && <MobilityScreen {...screenProps} onOpenRailLogistics={openRailLogistics} />}
+          {screen === 'travel' && (
+            <TravelScreen
+              {...screenProps}
+              query={travelQuery}
+              setQuery={setTravelQuery}
+              region={travelRegion}
+              setRegion={setTravelRegion}
+            />
+          )}
+          {screen === 'tickets' && (
+            <TicketsScreen
+              onCart={() => setCartOpen(true)}
+              tab={ticketTab}
+              setTab={setTicketTab}
+              filter={ticketFilter}
+              setFilter={setTicketFilter}
+            />
+          )}
+          {screen === 'menu' && (
+            <MenuScreen
+              {...screenProps}
+              onOpenBenefits={openBenefits}
+              onHome={() => setScreen('home')}
+            />
+          )}
+          {screen === 'benefits' && (
+            <BenefitsScreen activeTab={benefitTab} setActiveTab={setBenefitTab} onBack={() => setScreen(returnScreen)} />
+          )}
+          {screen === 'rail-logistics' && <RailLogisticsApp onExit={closeRailLogistics} onNotify={notify} onViewChange={setRailView} />}
 
-        {!['benefits', 'rail-logistics'].includes(screen) && <BottomNav active={screen} onChange={setScreen} />}
+          {!['benefits', 'rail-logistics'].includes(screen) && <BottomNav active={screen} onChange={setScreen} />}
 
-        {toast && <div className={`kr-toast ${screen === 'rail-logistics' ? 'kr-toast--rail-logistics' : ''}`} role="status" aria-live="polite" aria-atomic="true">{toast}</div>}
+          {toast && <div className={`kr-toast ${screen === 'rail-logistics' ? 'kr-toast--rail-logistics' : ''}`} role="status" aria-live="polite" aria-atomic="true">{toast}</div>}
 
-        {cartOpen && (
-          <div className="kr-sheet-layer" role="presentation" onMouseDown={() => setCartOpen(false)}>
-            <section className="kr-bottom-sheet" role="dialog" aria-modal="true" aria-label="장바구니" onMouseDown={(event) => event.stopPropagation()}>
-              <i className="kr-sheet-handle" />
-              <h2>장바구니</h2>
-              <img src={assetUrl('empty-ticket.png')} alt="" />
-              <p>장바구니가 비어 있어요</p>
-              <button type="button" onClick={() => setCartOpen(false)}>확인</button>
-            </section>
-          </div>
-        )}
-      </div>
-    </PhoneCanvas>
+          {cartOpen && (
+            <div className="kr-sheet-layer" role="presentation" onMouseDown={() => setCartOpen(false)}>
+              <section className="kr-bottom-sheet" role="dialog" aria-modal="true" aria-label="장바구니" onMouseDown={(event) => event.stopPropagation()}>
+                <i className="kr-sheet-handle" />
+                <h2>장바구니</h2>
+                <img src={assetUrl('empty-ticket.png')} alt="" />
+                <p>장바구니가 비어 있어요</p>
+                <button type="button" onClick={() => setCartOpen(false)}>확인</button>
+              </section>
+            </div>
+          )}
+        </div>
+      </PhoneCanvas>
+      <ContextualManual screen={screen} railView={railView} />
+    </div>
   )
 }
 
